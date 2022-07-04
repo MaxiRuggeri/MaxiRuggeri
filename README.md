@@ -1,4 +1,4 @@
-<span class="_aa8h" role="link" tabindex="-1" style="width: 150px; height: 150px;"><img alt="Foto del perfil de maxi.ruggeri" class="_aa8j" crossorigin="anonymous" draggable="false" src="https://instagram.feze8-1.fna.fbcdn.net/v/t51.2885-19/119716427_3181357631962655_511056440500735150_n.jpg?stp=dst-jpg_s150x150&amp;_nc_ht=instagram.feze8-1.fna.fbcdn.net&amp;_nc_cat=111&amp;_nc_ohc=0i4PUcoh2a0AX83djL8&amp;edm=ALbqBD0BAAAA&amp;ccb=7-5&amp;oh=00_AT8_R8QsPhSV4hzeNzwve5ZPEMqL7DuOcHNuL9xfv6v28w&amp;oe=62A1F046&amp;_nc_sid=9a90d6"></span>-
+<span class="_aa8h" role="link" tabindex="-1" style="width: 150px; height: 150px;"><img alt="Foto del perfil de maxi.ruggeri" class="_aa8j" crossorigin="anonymous" draggable="false" src="https://instagram.feze8-1.fna.fbcdn.net/v/t51.2885-19/290468871_158101753427406_6789462623318349132_n.jpg?stp=dst-jpg_s150x150&_nc_ht=instagram.feze8-1.fna.fbcdn.net&_nc_cat=106&_nc_ohc=hPaXOh_eWDgAX8MQe5y&tn=6ETsZ4M0EZZgYhMi&edm=ALlQn9MBAAAA&ccb=7-5&oh=00_AT-NPVEzr_AjHZJdiZpQ1CFRidJ4DlfIJ6dNY_Yg2MDtWg&oe=62C9EE52&_nc_sid=48a2a6"></span>-
 👋 Hola, yo soy Maxi Ruggeri
 - 🌱 Soy estudiante de secundario en argentina que relacionara...
 <!---
