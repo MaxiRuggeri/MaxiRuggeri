@@ -35,7 +35,7 @@
             background-color: rgba(20, 30, 45, 0.9);
             padding: 30px;
             border-radius: 15px;
-            border: 2px solid rgb(103, 20, 255);
+            border: 2px solid rgb(0, 255, 150);
             box-shadow: 0 10px 30px rgba(0,255,150,0.2);
             max-width: 400px;
             width: 100%;
@@ -131,9 +131,9 @@
             <div class="grupo-entrada">
                 <div class="etiqueta-deslizador">
                     <span>Resolución:</span>
-                    <span id="valorPoligonos" style="font-weight:bold;">Media (30)</span>
+                    <span id="valorPoligonos" style="font-weight:bold;">Media (20)</span>
                 </div>
-                <input type="range" id="sliderPoligonos" min="10" max="150" value="30">
+                <input type="range" id="sliderPoligonos" min="10" max="150" value="20">
                 <span id="advertenciaLag" class="texto-advertencia">⚠️ CUIDADO: Valores extremos pueden trabar tu dispositivo.</span>
             </div>
 
@@ -165,7 +165,6 @@
     <button id="btnModo">Modo: Arrastrar 🖐️</button>
 
     <script>
-        // Referencias del DOM (Interfaz)
         const pantallaInicio = document.getElementById('pantallaInicio');
         const btnIniciar = document.getElementById('btnIniciar');
         const selectorColor = document.getElementById('selectorColor');
@@ -178,33 +177,29 @@
         const advertenciaLag = document.getElementById('advertenciaLag');
         const ctx = lienzo.getContext('2d');
 
-        // Variables de Estado
         let imagenTela = null; 
-        // Color por defectof
         let colorBaseTela = {r: 150, g: 84, b: 255}; 
         let modoRenderizado = 'solido'; 
         let estaSimulando = false;
 
-        // Arrays de Física
         const Puntos = []; 
         const Enlaces = []; 
-        let columnas, filas, espaciado;
+        let EnlacesH = []; 
+        let EnlacesV = []; 
         
+        let columnas, filas, espaciado;
         let gravedadX = 0;
         let gravedadY = 0.5; 
 
-        // Variables de Interacción
         let estaTocando = false;
         let toqueX = -1000, toqueY = -1000;
         let modoCorte = false;
 
-        // Función para convertir código Hexadecimal a color RGB
         function hexARgb(hex) {
             let entero = parseInt(hex.replace('#', ''), 16);
             return { r: (entero >> 16) & 255, g: (entero >> 8) & 255, b: entero & 255 };
         }
 
-        // Evento: Mover el deslizador de resolución
         sliderPoligonos.addEventListener('input', (evento) => {
             let valor = parseInt(evento.target.value);
             let etiqueta = "Media";
@@ -225,7 +220,6 @@
             }
         });
 
-        // Evento: Clic en el botón Iniciar
         btnIniciar.addEventListener('click', () => {
             modoRenderizado = selectorEstiloRender.value;
             colorBaseTela = hexARgb(selectorColor.value);
@@ -243,7 +237,6 @@
             }
         });
 
-        // Configuración inicial de la malla y física
         function iniciarSimulacion() {
             pantallaInicio.style.display = 'none';
             lienzo.style.display = 'block';
@@ -252,38 +245,40 @@
             lienzo.width = window.innerWidth;
             lienzo.height = window.innerHeight;
 
-            const divisorDensidad = parseInt(sliderPoligonos.value); 
-            
+            Puntos.length = 0;
+            Enlaces.length = 0;
+
+            let divisorDensidad = parseInt(sliderPoligonos.value); 
             const anchoMaximo = lienzo.width * 0.90;
             const altoMaximo = lienzo.height * 0.80;
+            
+            let anchoTela = anchoMaximo;
+            let altoTela = altoMaximo;
 
             if (imagenTela) {
                 const aspectoImagen = imagenTela.width / imagenTela.height;
                 const aspectoPantalla = anchoMaximo / altoMaximo;
-                
-                let anchoTela, altoTela;
-                
                 if (aspectoImagen > aspectoPantalla) {
-                    anchoTela = anchoMaximo;
                     altoTela = anchoMaximo / aspectoImagen;
                 } else {
-                    altoTela = altoMaximo;
                     anchoTela = altoMaximo * aspectoImagen;
                 }
-                
-                columnas = divisorDensidad;
-                espaciado = anchoTela / (columnas - 1);
-                filas = Math.max(2, Math.round(altoTela / espaciado) + 1);
-            } else {
-                espaciado = lienzo.width / divisorDensidad; 
-                columnas = Math.floor(lienzo.width / espaciado);
-                filas = Math.floor(altoMaximo / espaciado);
             }
 
-            const inicioX = (lienzo.width - (columnas - 1) * espaciado) / 2;
-            const inicioY = 30; 
+            columnas = divisorDensidad;
+            espaciado = anchoTela / (columnas - 1);
 
-            // Crear los Puntos (Nodos)
+            if (espaciado < 6) {
+                espaciado = 6;
+                columnas = Math.floor(anchoTela / espaciado) + 1;
+            }
+
+            filas = Math.max(2, Math.round(altoTela / espaciado) + 1);
+            if (filas > 120) filas = 120;
+
+            const inicioX = (lienzo.width - (columnas - 1) * espaciado) / 2;
+            const inicioY = 20; 
+
             for (let y = 0; y < filas; y++) {
                 for (let x = 0; x < columnas; x++) {
                     Puntos.push({
@@ -296,26 +291,29 @@
                 }
             }
 
-            // Crear los Enlaces (Conexiones)
+            EnlacesH = new Array(Puntos.length);
+            EnlacesV = new Array(Puntos.length);
+
             for (let i = 0; i < Puntos.length; i++) {
-                if ((i + 1) % columnas !== 0) Enlaces.push({ p1: i, p2: i + 1, activo: true });
-                if (i < Puntos.length - columnas) Enlaces.push({ p1: i, p2: i + columnas, activo: true });
+                if ((i + 1) % columnas !== 0) {
+                    let enlace = { p1: i, p2: i + 1, activo: true };
+                    Enlaces.push(enlace);
+                    EnlacesH[i] = enlace;
+                }
+                if (i < Puntos.length - columnas) {
+                    let enlace = { p1: i, p2: i + columnas, activo: true };
+                    Enlaces.push(enlace);
+                    EnlacesV[i] = enlace;
+                }
             }
 
-            // Pedir permisos de giroscopio
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission()
                     .then(estado => { 
-                        if (estado === 'granted') {
-                            window.addEventListener('deviceorientation', manejarOrientacion);
-                        } else {
-                            gravedadX = 0; gravedadY = 0.5;
-                        }
+                        if (estado === 'granted') window.addEventListener('deviceorientation', manejarOrientacion);
+                        else { gravedadX = 0; gravedadY = 0.5; }
                     })
-                    .catch(error => {
-                        console.error(error);
-                        gravedadX = 0; gravedadY = 0.5;
-                    });
+                    .catch(error => { console.error(error); gravedadX = 0; gravedadY = 0.5; });
             } else {
                 window.addEventListener('deviceorientation', manejarOrientacion);
             }
@@ -324,19 +322,49 @@
             bucleAnimacion();
         }
 
+        // --- SISTEMA CORREGIDO: Giroscopio inteligente y modo reposo ---
         function manejarOrientacion(evento) {
             if (evento.gamma !== null && evento.beta !== null) {
-                let inclinacionX = Math.max(-90, Math.min(90, evento.gamma));
-                let inclinacionY = evento.beta;
-                gravedadX = inclinacionX / 30; 
-                gravedadY = inclinacionY / 30;
+                // Leemos la rotación real de la pantalla del celular
+                let orientacion = (window.screen && window.screen.orientation) ? window.screen.orientation.angle : (window.orientation || 0);
+                
+                let beta = evento.beta;   // -180 a 180 (Adelante/Atrás)
+                let gamma = evento.gamma; // -90 a 90   (Izquierda/Derecha)
+                
+                let inX = 0; 
+                let inY = 0;
+                
+                // Transponer ejes según cómo esté rotada la pantalla (Landscape/Portrait)
+                if (orientacion === 90) { 
+                    inX = beta; 
+                    inY = -gamma; 
+                } else if (orientacion === -90 || orientacion === 270) { 
+                    inX = -beta; 
+                    inY = gamma; 
+                } else if (orientacion === 180) { 
+                    inX = -gamma; 
+                    inY = -beta; 
+                } else { 
+                    inX = gamma; 
+                    inY = beta; 
+                }
+
+                // Si el celular está acostado plano en la mesa (inclinaciones casi cero)
+                // Forzamos un poco de gravedad artificial para que no flote en gravedad cero.
+                if (Math.abs(inY) < 15 && Math.abs(inX) < 15) {
+                    inY = 15;
+                }
+
+                inX = Math.max(-90, Math.min(90, inX));
+                
+                gravedadX = inX / 30; 
+                gravedadY = inY / 30;
             } else {
                 gravedadX = 0; 
                 gravedadY = 0.5;
             }
         }
 
-        // Botón para cambiar entre cortar y arrastrar
         btnModo.addEventListener('click', (evento) => {
             evento.preventDefault();
             modoCorte = !modoCorte;
@@ -365,11 +393,7 @@
             if(estaTocando) actualizarPuntero(evento); 
             if (evento.cancelable && evento.target === lienzo) evento.preventDefault(); 
         };
-        const terminarInteraccion = () => { 
-            estaTocando = false; 
-            toqueX = -1000; 
-            toqueY = -1000; 
-        };
+        const terminarInteraccion = () => { estaTocando = false; toqueX = -1000; toqueY = -1000; };
 
         window.addEventListener('touchstart', iniciarInteraccion, {passive: false});
         window.addEventListener('touchmove', moverInteraccion, {passive: false});
@@ -378,7 +402,6 @@
         window.addEventListener('mousemove', moverInteraccion);
         window.addEventListener('mouseup', terminarInteraccion);
 
-        // Mapeo de Texturas (Cálculo matricial de triángulos)
         function mapearTextura(ctx, img, x0, y0, u0, v0, x1, y1, u1, v1, x2, y2, u2, v2) {
             ctx.save();
             ctx.beginPath();
@@ -403,14 +426,21 @@
             ctx.restore();
         }
 
-        // Bucle Principal de la Simulación
         function bucleAnimacion() {
             if (!estaSimulando) return;
 
             ctx.fillStyle = 'rgb(5, 7, 12)';
             ctx.fillRect(0, 0, lienzo.width, lienzo.height);
 
-            // 1. Integración de Verlet (Física básica de puntos)
+            const limiteEstiramiento = Math.max(espaciado * 8, 45); 
+
+            // --- SISTEMA CORREGIDO: Compensación Estructural de Peso ---
+            // A mayor cantidad de filas, reducimos matemáticamente el impacto individual de la gravedad 
+            // para que la suma total del peso de la cadena no estire y rompa la tela superior.
+            let factorDureza = Math.max(1, Math.sqrt(filas / 15)); 
+            let gravedadAplicadaX = gravedadX / factorDureza;
+            let gravedadAplicadaY = gravedadY / factorDureza;
+
             for (let p of Puntos) {
                 if (!p.fijo) {
                     if (estaTocando && !modoCorte) {
@@ -427,13 +457,15 @@
 
                     p.viejoX = p.x; 
                     p.viejoY = p.y;
-                    p.x += velocX + gravedadX;
-                    p.y += velocY + gravedadY; 
+                    
+                    // Aplicamos la gravedad amortiguada
+                    p.x += velocX + gravedadAplicadaX;
+                    p.y += velocY + gravedadAplicadaY; 
                 }
             }
 
-            // 2. Resolver Restricciones (Tensión de los hilos)
-            for (let iteracion = 0; iteracion < 7; iteracion++) {
+            // Subimos las iteraciones a 10 para hacer que la malla sea extremadamente fuerte
+            for (let iteracion = 0; iteracion < 10; iteracion++) {
                 for (let enlace of Enlaces) {
                     if (!enlace.activo) continue;
 
@@ -444,7 +476,7 @@
                     
                     const distancia = Math.hypot(distX, distY) || 0.01; 
 
-                    if (distancia > espaciado * 12) { enlace.activo = false; continue; }
+                    if (distancia > limiteEstiramiento) { enlace.activo = false; continue; }
 
                     if (estaTocando && modoCorte) {
                         const medioX = (p1.x + p2.x) / 2;
@@ -454,16 +486,15 @@
                         }
                     }
 
-                    const fuerza = (espaciado - distancia) / distancia * 0.45;
+                    // Fuerza de recuperación al 50% (Rigidez máxima segura para la matemática)
+                    const fuerza = (espaciado - distancia) / distancia * 0.50;
                     
                     if (!p1.fijo) { p1.x -= distX * fuerza; p1.y -= distY * fuerza; }
                     if (!p2.fijo) { p2.x += distX * fuerza; p2.y += distY * fuerza; }
                 }
             }
 
-            // 3. Renderizado Visual
             if (modoRenderizado === 'alambre' && !imagenTela) {
-                // Modo Líneas Simples
                 ctx.strokeStyle = `rgb(${colorBaseTela.r}, ${colorBaseTela.g}, ${colorBaseTela.b})`;
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
@@ -477,7 +508,6 @@
                 }
                 ctx.stroke();
             } else {
-                // Modo Cuadros (Color o Imagen)
                 let anchoImg = imagenTela ? imagenTela.width : 0;
                 let altoImg = imagenTela ? imagenTela.height : 0;
                 let pasoU = imagenTela ? anchoImg / (columnas - 1) : 0;
@@ -486,19 +516,25 @@
                 for (let y = 0; y < filas - 1; y++) {
                     for (let x = 0; x < columnas - 1; x++) {
                         const i = y * columnas + x;
+
+                        const linkArriba = EnlacesH[i];
+                        const linkDerecha = EnlacesV[i + 1];
+                        const linkAbajo = EnlacesH[i + columnas];
+                        const linkIzquierda = EnlacesV[i];
+
+                        if (!linkArriba || !linkArriba.activo || 
+                            !linkDerecha || !linkDerecha.activo || 
+                            !linkAbajo || !linkAbajo.activo || 
+                            !linkIzquierda || !linkIzquierda.activo) {
+                            continue;
+                        }
+
                         const p1 = Puntos[i];                 
                         const p2 = Puntos[i + 1];             
                         const p3 = Puntos[i + columnas + 1];      
                         const p4 = Puntos[i + columnas];          
 
-                        const dist1 = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-                        const dist2 = Math.hypot(p2.x - p3.x, p2.y - p3.y);
-                        const dist3 = Math.hypot(p3.x - p4.x, p3.y - p4.y);
-                        const dist4 = Math.hypot(p4.x - p1.x, p4.y - p1.y);
-                        if (dist1 > espaciado * 5 || dist2 > espaciado * 5 || dist3 > espaciado * 5 || dist4 > espaciado * 5) continue;
-
                         if (imagenTela) {
-                            // Textura
                             let u0 = x * pasoU, v0 = y * pasoV;
                             let u1 = (x+1) * pasoU, v1 = y * pasoV;
                             let u2 = (x+1) * pasoU, v2 = (y+1) * pasoV;
@@ -507,7 +543,6 @@
                             mapearTextura(ctx, imagenTela, p1.x, p1.y, u0, v0, p2.x, p2.y, u1, v1, p3.x, p3.y, u2, v2);
                             mapearTextura(ctx, imagenTela, p1.x, p1.y, u0, v0, p3.x, p3.y, u2, v2, p4.x, p4.y, u3, v3);
                         } else {
-                            // Color Sólido
                             const productoCruzado = (p2.x - p1.x) * (p4.y - p1.y) - (p2.y - p1.y) * (p4.x - p1.x);
                             const areaBase = espaciado * espaciado;
                             let sombra = (productoCruzado / areaBase) * 40; 
@@ -537,7 +572,6 @@
             requestAnimationFrame(bucleAnimacion);
         }
 
-        // Evento: Redimensionar pantalla
         window.addEventListener('resize', () => {
             if (estaSimulando) {
                 lienzo.width = window.innerWidth;
