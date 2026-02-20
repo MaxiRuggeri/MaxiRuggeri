@@ -3,24 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tela Interactiva Multi-Modo</title>
+    <title>Tela Interactiva</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
             background-color: rgb(5, 7, 12);
-            /* Se quitó el touch-action: none de aquí para que la UI funcione */
             font-family: sans-serif;
             color: white;
         }
         canvas {
             display: none;
-            /* Se limitó el bloqueo táctil solo al canvas */
             touch-action: none; 
         }
         
-        #startScreen {
+        #pantallaInicio {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             display: flex;
@@ -33,11 +31,11 @@
             box-sizing: border-box;
             text-align: center;
         }
-        .card {
+        .tarjeta {
             background-color: rgba(20, 30, 45, 0.9);
             padding: 30px;
             border-radius: 15px;
-            border: 2px solid rgb(0, 255, 150);
+            border: 2px solid rgb(103, 20, 255);
             box-shadow: 0 10px 30px rgba(0,255,150,0.2);
             max-width: 400px;
             width: 100%;
@@ -45,7 +43,7 @@
             overflow-y: auto;
         }
         h2 { margin-top: 0; color: rgb(0, 255, 150); }
-        .input-group {
+        .grupo-entrada {
             margin: 15px 0;
             display: flex;
             flex-direction: column;
@@ -78,12 +76,12 @@
             width: 100%;
             cursor: pointer;
         }
-        .slider-label {
+        .etiqueta-deslizador {
             display: flex;
             justify-content: space-between;
             font-size: 14px;
         }
-        .btn-start {
+        .btn-iniciar {
             background-color: rgb(0, 255, 150);
             color: rgb(5, 7, 12);
             border: none;
@@ -96,9 +94,9 @@
             margin-top: 15px;
             transition: transform 0.1s;
         }
-        .btn-start:active { transform: scale(0.95); }
+        .btn-iniciar:active { transform: scale(0.95); }
 
-        #modeBtn {
+        #btnModo {
             display: none;
             position: fixed;
             bottom: 30px;
@@ -115,224 +113,273 @@
             z-index: 10;
             cursor: pointer;
         }
+        .texto-advertencia {
+            color: #ff4444;
+            font-size: 11px;
+            font-weight: bold;
+            display: none;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="startScreen">
-        <div class="card">
+    <div id="pantallaInicio">
+        <div class="tarjeta">
             <h2>Diseña tu Tela</h2>
             
-            <div class="input-group">
-                <div class="slider-label">
-                    <span>Resolución (Polígonos):</span>
-                    <span id="polyCountVal">Media (20)</span>
+            <div class="grupo-entrada">
+                <div class="etiqueta-deslizador">
+                    <span>Resolución:</span>
+                    <span id="valorPoligonos" style="font-weight:bold;">Media (30)</span>
                 </div>
-                <input type="range" id="polyCountSlider" min="10" max="100" value="20">
+                <input type="range" id="sliderPoligonos" min="10" max="150" value="30">
+                <span id="advertenciaLag" class="texto-advertencia">⚠️ CUIDADO: Valores extremos pueden trabar tu dispositivo.</span>
             </div>
 
-            <div class="input-group">
+            <div class="grupo-entrada">
                 <label>Estilo Visual:</label>
-                <select id="renderStyle">
-                    <option value="solid">Cuadros Rellenos (Sólido)</option>
-                    <option value="wireframe">Malla de Alambre (Versión Antigua)</option>
+                <select id="selectorEstiloRender">
+                    <option value="solido">Cuadros Rellenos (Sólido)</option>
+                    <option value="alambre">Malla de Alambre (Líneas)</option>
                 </select>
             </div>
 
-            <div class="input-group">
+            <div class="grupo-entrada">
                 <label>Color Base:</label>
-                <input type="color" id="colorPicker" value="#0096ff">
+                <input type="color" id="selectorColor" value="#9654ff">
             </div>
 
             <div style="margin: 15px 0; text-align: center; color: #888; font-size: 12px;">--- O ---</div>
 
-            <div class="input-group">
-                <label>Estampar Imagen (Sobrescribe estilo):</label>
-                <input type="file" id="imagePicker" accept="image/*">
+            <div class="grupo-entrada">
+                <label>Estampar Imagen (Se ajusta sola):</label>
+                <input type="file" id="selectorImagen" accept="image/*">
             </div>
 
-            <button class="btn-start" id="startBtn">Iniciar Simulación 🚀</button>
+            <button class="btn-iniciar" id="btnIniciar">Iniciar Simulación 🚀</button>
         </div>
     </div>
 
-    <canvas id="canvas"></canvas>
-    <button id="modeBtn">Modo: Arrastrar 🖐️</button>
+    <canvas id="lienzo"></canvas>
+    <button id="btnModo">Modo: Arrastrar 🖐️</button>
 
     <script>
-        const startScreen = document.getElementById('startScreen');
-        const startBtn = document.getElementById('startBtn');
-        const colorPicker = document.getElementById('colorPicker');
-        const imagePicker = document.getElementById('imagePicker');
-        const renderStyleSelect = document.getElementById('renderStyle');
-        const canvas = document.getElementById('canvas');
-        const modeBtn = document.getElementById('modeBtn');
-        const polyCountSlider = document.getElementById('polyCountSlider');
-        const polyCountVal = document.getElementById('polyCountVal');
-        const ctx = canvas.getContext('2d');
+        // Referencias del DOM (Interfaz)
+        const pantallaInicio = document.getElementById('pantallaInicio');
+        const btnIniciar = document.getElementById('btnIniciar');
+        const selectorColor = document.getElementById('selectorColor');
+        const selectorImagen = document.getElementById('selectorImagen');
+        const selectorEstiloRender = document.getElementById('selectorEstiloRender');
+        const lienzo = document.getElementById('lienzo');
+        const btnModo = document.getElementById('btnModo');
+        const sliderPoligonos = document.getElementById('sliderPoligonos');
+        const valorPoligonos = document.getElementById('valorPoligonos');
+        const advertenciaLag = document.getElementById('advertenciaLag');
+        const ctx = lienzo.getContext('2d');
 
-        let clothImage = null; 
-        let clothBaseColor = {r: 0, g: 150, b: 255}; 
-        let renderMode = 'solid'; 
-        let isSimulating = false;
+        // Variables de Estado
+        let imagenTela = null; 
+        // Color por defectof
+        let colorBaseTela = {r: 150, g: 84, b: 255}; 
+        let modoRenderizado = 'solido'; 
+        let estaSimulando = false;
 
-        const P = []; 
-        const S = []; 
-        let cols, rows, spacing;
+        // Arrays de Física
+        const Puntos = []; 
+        const Enlaces = []; 
+        let columnas, filas, espaciado;
         
-        let gravityX = 0;
-        let gravityY = 0.5; 
+        let gravedadX = 0;
+        let gravedadY = 0.5; 
 
-        let isTouching = false;
-        let touchX = -1000, touchY = -1000;
-        let cutMode = false;
+        // Variables de Interacción
+        let estaTocando = false;
+        let toqueX = -1000, toqueY = -1000;
+        let modoCorte = false;
 
-        function hexToRgb(hex) {
-            let bigint = parseInt(hex.replace('#', ''), 16);
-            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+        // Función para convertir código Hexadecimal a color RGB
+        function hexARgb(hex) {
+            let entero = parseInt(hex.replace('#', ''), 16);
+            return { r: (entero >> 16) & 255, g: (entero >> 8) & 255, b: entero & 255 };
         }
 
-        polyCountSlider.addEventListener('input', (e) => {
-    let val = parseInt(e.target.value);
-    let label;
+        // Evento: Mover el deslizador de resolución
+        sliderPoligonos.addEventListener('input', (evento) => {
+            let valor = parseInt(evento.target.value);
+            let etiqueta = "Media";
+            
+            if (valor <= 20) etiqueta = "Baja";
+            else if (valor >= 100) etiqueta = "Fritapapas 💻🔥";
+            else if (valor >= 70) etiqueta = "Locura";
+            else if (valor >= 40) etiqueta = "Alta";
 
-    if (val >= 50) {
-        label = "Cuidadoooooo";
-    } else if (val >= 35) {
-        label = "Alta";
-    } else if (val > 15) {
-        label = "Media";
-    } else {
-        label = "Baja";
-    }
-
-    polyCountVal.innerText = `${label} (${val})`;
-});
-
-
-        startBtn.addEventListener('click', () => {
-            renderMode = renderStyleSelect.value;
-            clothBaseColor = hexToRgb(colorPicker.value);
-
-            if (imagePicker.files && imagePicker.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    clothImage = new Image();
-                    clothImage.onload = () => initSimulation();
-                    clothImage.src = event.target.result;
-                }
-                reader.readAsDataURL(imagePicker.files[0]);
+            valorPoligonos.innerText = `${etiqueta} (${valor})`;
+            
+            if(valor >= 80) {
+                advertenciaLag.style.display = "block";
+                valorPoligonos.style.color = "#ff4444";
             } else {
-                initSimulation();
+                advertenciaLag.style.display = "none";
+                valorPoligonos.style.color = "white";
             }
         });
 
-        function initSimulation() {
-            startScreen.style.display = 'none';
-            canvas.style.display = 'block';
-            modeBtn.style.display = 'block';
+        // Evento: Clic en el botón Iniciar
+        btnIniciar.addEventListener('click', () => {
+            modoRenderizado = selectorEstiloRender.value;
+            colorBaseTela = hexARgb(selectorColor.value);
+
+            if (selectorImagen.files && selectorImagen.files[0]) {
+                const lector = new FileReader();
+                lector.onload = function(evento) {
+                    imagenTela = new Image();
+                    imagenTela.onload = () => iniciarSimulacion();
+                    imagenTela.src = evento.target.result;
+                }
+                lector.readAsDataURL(selectorImagen.files[0]);
+            } else {
+                iniciarSimulacion();
+            }
+        });
+
+        // Configuración inicial de la malla y física
+        function iniciarSimulacion() {
+            pantallaInicio.style.display = 'none';
+            lienzo.style.display = 'block';
+            btnModo.style.display = 'block';
             
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            lienzo.width = window.innerWidth;
+            lienzo.height = window.innerHeight;
 
-            const divisorDensidad = parseInt(polyCountSlider.value); 
-            const porcentajeAlto = 0.85; 
+            const divisorDensidad = parseInt(sliderPoligonos.value); 
+            
+            const anchoMaximo = lienzo.width * 0.90;
+            const altoMaximo = lienzo.height * 0.80;
 
-            spacing = canvas.width / divisorDensidad; 
-            cols = Math.floor(canvas.width / spacing);
-            rows = Math.floor((canvas.height * porcentajeAlto) / spacing); 
-            const startX = (canvas.width - cols * spacing) / 2;
-            const startY = 20; 
+            if (imagenTela) {
+                const aspectoImagen = imagenTela.width / imagenTela.height;
+                const aspectoPantalla = anchoMaximo / altoMaximo;
+                
+                let anchoTela, altoTela;
+                
+                if (aspectoImagen > aspectoPantalla) {
+                    anchoTela = anchoMaximo;
+                    altoTela = anchoMaximo / aspectoImagen;
+                } else {
+                    altoTela = altoMaximo;
+                    anchoTela = altoMaximo * aspectoImagen;
+                }
+                
+                columnas = divisorDensidad;
+                espaciado = anchoTela / (columnas - 1);
+                filas = Math.max(2, Math.round(altoTela / espaciado) + 1);
+            } else {
+                espaciado = lienzo.width / divisorDensidad; 
+                columnas = Math.floor(lienzo.width / espaciado);
+                filas = Math.floor(altoMaximo / espaciado);
+            }
 
-            for (let y = 0; y < rows; y++) {
-                for (let x = 0; x < cols; x++) {
-                    P.push({
-                        x: startX + x * spacing,
-                        y: startY + y * spacing,
-                        old_x: startX + x * spacing,
-                        old_y: startY + y * spacing,
-                        pinned: y === 0 
+            const inicioX = (lienzo.width - (columnas - 1) * espaciado) / 2;
+            const inicioY = 30; 
+
+            // Crear los Puntos (Nodos)
+            for (let y = 0; y < filas; y++) {
+                for (let x = 0; x < columnas; x++) {
+                    Puntos.push({
+                        x: inicioX + x * espaciado,
+                        y: inicioY + y * espaciado,
+                        viejoX: inicioX + x * espaciado,
+                        viejoY: inicioY + y * espaciado,
+                        fijo: y === 0 
                     });
                 }
             }
 
-            for (let i = 0; i < P.length; i++) {
-                if ((i + 1) % cols !== 0) S.push({ p1: i, p2: i + 1, active: true });
-                if (i < P.length - cols) S.push({ p1: i, p2: i + cols, active: true });
+            // Crear los Enlaces (Conexiones)
+            for (let i = 0; i < Puntos.length; i++) {
+                if ((i + 1) % columnas !== 0) Enlaces.push({ p1: i, p2: i + 1, activo: true });
+                if (i < Puntos.length - columnas) Enlaces.push({ p1: i, p2: i + columnas, activo: true });
             }
 
+            // Pedir permisos de giroscopio
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission()
-                    .then(state => { 
-                        if (state === 'granted') {
-                            window.addEventListener('deviceorientation', handleOrientation);
+                    .then(estado => { 
+                        if (estado === 'granted') {
+                            window.addEventListener('deviceorientation', manejarOrientacion);
                         } else {
-                            gravityX = 0; gravityY = 0.5;
+                            gravedadX = 0; gravedadY = 0.5;
                         }
                     })
-                    .catch(err => {
-                        console.error(err);
-                        gravityX = 0; gravityY = 0.5;
+                    .catch(error => {
+                        console.error(error);
+                        gravedadX = 0; gravedadY = 0.5;
                     });
             } else {
-                window.addEventListener('deviceorientation', handleOrientation);
+                window.addEventListener('deviceorientation', manejarOrientacion);
             }
 
-            isSimulating = true;
-            loop();
+            estaSimulando = true;
+            bucleAnimacion();
         }
 
-        function handleOrientation(event) {
-            if (event.gamma !== null && event.beta !== null) {
-                let tiltX = Math.max(-90, Math.min(90, event.gamma));
-                let tiltY = event.beta;
-                gravityX = tiltX / 30; 
-                gravityY = tiltY / 30;
+        function manejarOrientacion(evento) {
+            if (evento.gamma !== null && evento.beta !== null) {
+                let inclinacionX = Math.max(-90, Math.min(90, evento.gamma));
+                let inclinacionY = evento.beta;
+                gravedadX = inclinacionX / 30; 
+                gravedadY = inclinacionY / 30;
             } else {
-                gravityX = 0; 
-                gravityY = 0.5;
+                gravedadX = 0; 
+                gravedadY = 0.5;
             }
         }
 
-        modeBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            cutMode = !cutMode;
-            modeBtn.innerText = cutMode ? "Modo: Cortar ✂️" : "Modo: Arrastrar 🖐️";
-            modeBtn.style.backgroundColor = cutMode ? "#ff4444" : "rgb(0, 255, 150)";
-            modeBtn.style.color = cutMode ? "#fff" : "rgb(0, 5, 10)";
+        // Botón para cambiar entre cortar y arrastrar
+        btnModo.addEventListener('click', (evento) => {
+            evento.preventDefault();
+            modoCorte = !modoCorte;
+            btnModo.innerText = modoCorte ? "Modo: Cortar ✂️" : "Modo: Arrastrar 🖐️";
+            btnModo.style.backgroundColor = modoCorte ? "#ff4444" : "rgb(0, 255, 150)";
+            btnModo.style.color = modoCorte ? "#fff" : "rgb(0, 5, 10)";
         });
 
-        function updatePointer(e) {
-            if (e.touches && e.touches.length > 0) {
-                touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+        function actualizarPuntero(evento) {
+            if (evento.touches && evento.touches.length > 0) {
+                toqueX = evento.touches[0].clientX; 
+                toqueY = evento.touches[0].clientY;
             } else {
-                touchX = e.clientX; touchY = e.clientY;
+                toqueX = evento.clientX; 
+                toqueY = evento.clientY;
             }
         }
 
-        // --- CORRECCIÓN DE INTERACCIÓN ---
-        const startInteraction = (e) => { 
-            // Solo actuar si ya estamos simulando y el objetivo es el canvas
-            if(!isSimulating || e.target !== canvas) return;
-            isTouching = true; updatePointer(e); 
+        const iniciarInteraccion = (evento) => { 
+            if(!estaSimulando || evento.target !== lienzo) return;
+            estaTocando = true; 
+            actualizarPuntero(evento); 
         };
-        const moveInteraction = (e) => { 
-            if(!isSimulating) return;
-            if(isTouching) updatePointer(e); 
-            // Evitar scroll en móviles SOLO cuando arrastramos la tela
-            if (e.cancelable && e.target === canvas) e.preventDefault(); 
+        const moverInteraccion = (evento) => { 
+            if(!estaSimulando) return;
+            if(estaTocando) actualizarPuntero(evento); 
+            if (evento.cancelable && evento.target === lienzo) evento.preventDefault(); 
         };
-        const endInteraction = () => { 
-            isTouching = false; touchX = -1000; touchY = -1000; 
+        const terminarInteraccion = () => { 
+            estaTocando = false; 
+            toqueX = -1000; 
+            toqueY = -1000; 
         };
 
-        window.addEventListener('touchstart', startInteraction, {passive: false});
-        window.addEventListener('touchmove', moveInteraction, {passive: false});
-        window.addEventListener('touchend', endInteraction);
-        window.addEventListener('mousedown', startInteraction);
-        window.addEventListener('mousemove', moveInteraction);
-        window.addEventListener('mouseup', endInteraction);
+        window.addEventListener('touchstart', iniciarInteraccion, {passive: false});
+        window.addEventListener('touchmove', moverInteraccion, {passive: false});
+        window.addEventListener('touchend', terminarInteraccion);
+        window.addEventListener('mousedown', iniciarInteraccion);
+        window.addEventListener('mousemove', moverInteraccion);
+        window.addEventListener('mouseup', terminarInteraccion);
 
-        function textureMap(ctx, img, x0, y0, u0, v0, x1, y1, u1, v1, x2, y2, u2, v2) {
+        // Mapeo de Texturas (Cálculo matricial de triángulos)
+        function mapearTextura(ctx, img, x0, y0, u0, v0, x1, y1, u1, v1, x2, y2, u2, v2) {
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(x0, y0);
@@ -356,112 +403,122 @@
             ctx.restore();
         }
 
-        function loop() {
-            if (!isSimulating) return;
+        // Bucle Principal de la Simulación
+        function bucleAnimacion() {
+            if (!estaSimulando) return;
 
             ctx.fillStyle = 'rgb(5, 7, 12)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, lienzo.width, lienzo.height);
 
-            for (let p of P) {
-                if (!p.pinned) {
-                    if (isTouching && !cutMode) {
-                        const dx = p.x - touchX;
-                        const dy = p.y - touchY;
-                        if (Math.hypot(dx, dy) < 80) {
-                            p.x -= dx * 0.3; 
-                            p.y -= dy * 0.3;
+            // 1. Integración de Verlet (Física básica de puntos)
+            for (let p of Puntos) {
+                if (!p.fijo) {
+                    if (estaTocando && !modoCorte) {
+                        const distX = p.x - toqueX;
+                        const distY = p.y - toqueY;
+                        if (Math.hypot(distX, distY) < 80) {
+                            p.x -= distX * 0.3; 
+                            p.y -= distY * 0.3;
                         }
                     }
 
-                    const vx = Math.max(-25, Math.min(25, (p.x - p.old_x) * 0.99));
-                    const vy = Math.max(-25, Math.min(25, (p.y - p.old_y) * 0.99));
+                    const velocX = Math.max(-50, Math.min(50, (p.x - p.viejoX) * 0.99));
+                    const velocY = Math.max(-50, Math.min(50, (p.y - p.viejoY) * 0.99));
 
-                    p.old_x = p.x; p.old_y = p.y;
-                    p.x += vx + gravityX;
-                    p.y += vy + gravityY; 
+                    p.viejoX = p.x; 
+                    p.viejoY = p.y;
+                    p.x += velocX + gravedadX;
+                    p.y += velocY + gravedadY; 
                 }
             }
 
-            for (let iter = 0; iter < 5; iter++) {
-                for (let sk of S) {
-                    if (!sk.active) continue;
+            // 2. Resolver Restricciones (Tensión de los hilos)
+            for (let iteracion = 0; iteracion < 7; iteracion++) {
+                for (let enlace of Enlaces) {
+                    if (!enlace.activo) continue;
 
-                    const p1 = P[sk.p1];
-                    const p2 = P[sk.p2];
-                    const dx = p2.x - p1.x;
-                    const dy = p2.y - p1.y;
-                    const d = Math.hypot(dx, dy) || 0.1;
-
-                    if (d > spacing * 7) { sk.active = false; continue; }
-
-                    if (isTouching && cutMode) {
-                        const midX = (p1.x + p2.x) / 2;
-                        const midY = (p1.y + p2.y) / 2;
-                        if (Math.hypot(midX - touchX, midY - touchY) < 40) {
-                            sk.active = false; continue;
-                        }
-                    }
-
-                    const f = (spacing - d) / d * 0.5;
+                    const p1 = Puntos[enlace.p1];
+                    const p2 = Puntos[enlace.p2];
+                    const distX = p2.x - p1.x;
+                    const distY = p2.y - p1.y;
                     
-                    if (!p1.pinned) { p1.x -= dx * f; p1.y -= dy * f; }
-                    if (!p2.pinned) { p2.x += dx * f; p2.y += dy * f; }
+                    const distancia = Math.hypot(distX, distY) || 0.01; 
+
+                    if (distancia > espaciado * 12) { enlace.activo = false; continue; }
+
+                    if (estaTocando && modoCorte) {
+                        const medioX = (p1.x + p2.x) / 2;
+                        const medioY = (p1.y + p2.y) / 2;
+                        if (Math.hypot(medioX - toqueX, medioY - toqueY) < 40) {
+                            enlace.activo = false; continue;
+                        }
+                    }
+
+                    const fuerza = (espaciado - distancia) / distancia * 0.45;
+                    
+                    if (!p1.fijo) { p1.x -= distX * fuerza; p1.y -= distY * fuerza; }
+                    if (!p2.fijo) { p2.x += distX * fuerza; p2.y += distY * fuerza; }
                 }
             }
 
-            if (renderMode === 'wireframe' && !clothImage) {
-                ctx.strokeStyle = `rgb(${clothBaseColor.r}, ${clothBaseColor.g}, ${clothBaseColor.b})`;
+            // 3. Renderizado Visual
+            if (modoRenderizado === 'alambre' && !imagenTela) {
+                // Modo Líneas Simples
+                ctx.strokeStyle = `rgb(${colorBaseTela.r}, ${colorBaseTela.g}, ${colorBaseTela.b})`;
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
-                for (let sk of S) {
-                    if (sk.active) {
-                        const p1 = P[sk.p1];
-                        const p2 = P[sk.p2];
+                for (let enlace of Enlaces) {
+                    if (enlace.activo) {
+                        const p1 = Puntos[enlace.p1];
+                        const p2 = Puntos[enlace.p2];
                         ctx.moveTo(p1.x, p1.y);
                         ctx.lineTo(p2.x, p2.y);
                     }
                 }
                 ctx.stroke();
             } else {
-                let imgW = clothImage ? clothImage.width : 0;
-                let imgH = clothImage ? clothImage.height : 0;
-                let stepU = clothImage ? imgW / cols : 0;
-                let stepV = clothImage ? imgH / rows : 0;
+                // Modo Cuadros (Color o Imagen)
+                let anchoImg = imagenTela ? imagenTela.width : 0;
+                let altoImg = imagenTela ? imagenTela.height : 0;
+                let pasoU = imagenTela ? anchoImg / (columnas - 1) : 0;
+                let pasoV = imagenTela ? altoImg / (filas - 1) : 0;
 
-                for (let y = 0; y < rows - 1; y++) {
-                    for (let x = 0; x < cols - 1; x++) {
-                        const i = y * cols + x;
-                        const p1 = P[i];                 
-                        const p2 = P[i + 1];             
-                        const p3 = P[i + cols + 1];      
-                        const p4 = P[i + cols];          
+                for (let y = 0; y < filas - 1; y++) {
+                    for (let x = 0; x < columnas - 1; x++) {
+                        const i = y * columnas + x;
+                        const p1 = Puntos[i];                 
+                        const p2 = Puntos[i + 1];             
+                        const p3 = Puntos[i + columnas + 1];      
+                        const p4 = Puntos[i + columnas];          
 
                         const dist1 = Math.hypot(p1.x - p2.x, p1.y - p2.y);
                         const dist2 = Math.hypot(p2.x - p3.x, p2.y - p3.y);
                         const dist3 = Math.hypot(p3.x - p4.x, p3.y - p4.y);
                         const dist4 = Math.hypot(p4.x - p1.x, p4.y - p1.y);
-                        if (dist1 > spacing * 3 || dist2 > spacing * 3 || dist3 > spacing * 3 || dist4 > spacing * 3) continue;
+                        if (dist1 > espaciado * 5 || dist2 > espaciado * 5 || dist3 > espaciado * 5 || dist4 > espaciado * 5) continue;
 
-                        if (clothImage) {
-                            let u0 = x * stepU, v0 = y * stepV;
-                            let u1 = (x+1) * stepU, v1 = y * stepV;
-                            let u2 = (x+1) * stepU, v2 = (y+1) * stepV;
-                            let u3 = x * stepU, v3 = (y+1) * stepV;
+                        if (imagenTela) {
+                            // Textura
+                            let u0 = x * pasoU, v0 = y * pasoV;
+                            let u1 = (x+1) * pasoU, v1 = y * pasoV;
+                            let u2 = (x+1) * pasoU, v2 = (y+1) * pasoV;
+                            let u3 = x * pasoU, v3 = (y+1) * pasoV;
 
-                            textureMap(ctx, clothImage, p1.x, p1.y, u0, v0, p2.x, p2.y, u1, v1, p3.x, p3.y, u2, v2);
-                            textureMap(ctx, clothImage, p1.x, p1.y, u0, v0, p3.x, p3.y, u2, v2, p4.x, p4.y, u3, v3);
+                            mapearTextura(ctx, imagenTela, p1.x, p1.y, u0, v0, p2.x, p2.y, u1, v1, p3.x, p3.y, u2, v2);
+                            mapearTextura(ctx, imagenTela, p1.x, p1.y, u0, v0, p3.x, p3.y, u2, v2, p4.x, p4.y, u3, v3);
                         } else {
-                            const crossProduct = (p2.x - p1.x) * (p4.y - p1.y) - (p2.y - p1.y) * (p4.x - p1.x);
-                            const baseArea = spacing * spacing;
-                            let shade = (crossProduct / baseArea) * 40; 
+                            // Color Sólido
+                            const productoCruzado = (p2.x - p1.x) * (p4.y - p1.y) - (p2.y - p1.y) * (p4.x - p1.x);
+                            const areaBase = espaciado * espaciado;
+                            let sombra = (productoCruzado / areaBase) * 40; 
                             
-                            let r = Math.max(0, Math.min(255, clothBaseColor.r + shade - 20));
-                            let g = Math.max(0, Math.min(255, clothBaseColor.g + shade - 20));
-                            let b = Math.max(0, Math.min(255, clothBaseColor.b + shade - 20));
+                            let r = Math.max(0, Math.min(255, colorBaseTela.r + sombra - 20));
+                            let g = Math.max(0, Math.min(255, colorBaseTela.g + sombra - 20));
+                            let b = Math.max(0, Math.min(255, colorBaseTela.b + sombra - 20));
 
                             ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
                             ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`; 
-                            ctx.lineWidth = 0.5; 
+                            ctx.lineWidth = 0.8; 
 
                             ctx.beginPath();
                             ctx.moveTo(p1.x, p1.y);
@@ -477,13 +534,14 @@
                 }
             }
 
-            requestAnimationFrame(loop);
+            requestAnimationFrame(bucleAnimacion);
         }
 
+        // Evento: Redimensionar pantalla
         window.addEventListener('resize', () => {
-            if (isSimulating) {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+            if (estaSimulando) {
+                lienzo.width = window.innerWidth;
+                lienzo.height = window.innerHeight;
             }
         });
     </script>
