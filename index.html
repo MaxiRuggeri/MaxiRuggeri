@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tela Interactiva Multi-Modo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: rgb(5, 7, 12);
+            /* Se quitó el touch-action: none de aquí para que la UI funcione */
+            font-family: sans-serif;
+            color: white;
+        }
+        canvas {
+            display: none;
+            /* Se limitó el bloqueo táctil solo al canvas */
+            touch-action: none; 
+        }
+        
+        #startScreen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgb(10, 15, 25);
+            z-index: 50;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .card {
+            background-color: rgba(20, 30, 45, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid rgb(0, 255, 150);
+            box-shadow: 0 10px 30px rgba(0,255,150,0.2);
+            max-width: 400px;
+            width: 100%;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+        h2 { margin-top: 0; color: rgb(0, 255, 150); }
+        .input-group {
+            margin: 15px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+        select, input[type="file"] {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        select option {
+            background-color: rgb(20, 30, 45);
+            color: white;
+        }
+        input[type="color"] {
+            width: 100%;
+            height: 45px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        input[type="range"] {
+            accent-color: rgb(0, 255, 150);
+            width: 100%;
+            cursor: pointer;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        .btn-start {
+            background-color: rgb(0, 255, 150);
+            color: rgb(5, 7, 12);
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            transition: transform 0.1s;
+        }
+        .btn-start:active { transform: scale(0.95); }
+
+        #modeBtn {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            border: none;
+            background-color: rgb(0, 255, 150);
+            color: rgb(0, 5, 10);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            z-index: 10;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="startScreen">
+        <div class="card">
+            <h2>Diseña tu Tela</h2>
+            
+            <div class="input-group">
+                <div class="slider-label">
+                    <span>Resolución (Polígonos):</span>
+                    <span id="polyCountVal">Media (20)</span>
+                </div>
+                <input type="range" id="polyCountSlider" min="10" max="100" value="20">
+            </div>
+
+            <div class="input-group">
+                <label>Estilo Visual:</label>
+                <select id="renderStyle">
+                    <option value="solid">Cuadros Rellenos (Sólido)</option>
+                    <option value="wireframe">Malla de Alambre (Versión Antigua)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Color Base:</label>
+                <input type="color" id="colorPicker" value="#0096ff">
+            </div>
+
+            <div style="margin: 15px 0; text-align: center; color: #888; font-size: 12px;">--- O ---</div>
+
+            <div class="input-group">
+                <label>Estampar Imagen (Sobrescribe estilo):</label>
+                <input type="file" id="imagePicker" accept="image/*">
+            </div>
+
+            <button class="btn-start" id="startBtn">Iniciar Simulación 🚀</button>
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+    <button id="modeBtn">Modo: Arrastrar 🖐️</button>
+
+    <script>
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const colorPicker = document.getElementById('colorPicker');
+        const imagePicker = document.getElementById('imagePicker');
+        const renderStyleSelect = document.getElementById('renderStyle');
+        const canvas = document.getElementById('canvas');
+        const modeBtn = document.getElementById('modeBtn');
+        const polyCountSlider = document.getElementById('polyCountSlider');
+        const polyCountVal = document.getElementById('polyCountVal');
+        const ctx = canvas.getContext('2d');
+
+        let clothImage = null; 
+        let clothBaseColor = {r: 0, g: 150, b: 255}; 
+        let renderMode = 'solid'; 
+        let isSimulating = false;
+
+        const P = []; 
+        const S = []; 
+        let cols, rows, spacing;
+        
+        let gravityX = 0;
+        let gravityY = 0.5; 
+
+        let isTouching = false;
+        let touchX = -1000, touchY = -1000;
+        let cutMode = false;
+
+        function hexToRgb(hex) {
+            let bigint = parseInt(hex.replace('#', ''), 16);
+            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+        }
+
+        polyCountSlider.addEventListener('input', (e) => {
+    let val = parseInt(e.target.value);
+    let label;
+
+    if (val >= 50) {
+        label = "Cuidadoooooo";
+    } else if (val >= 35) {
+        label = "Alta";
+    } else if (val > 15) {
+        label = "Media";
+    } else {
+        label = "Baja";
+    }
+
+    polyCountVal.innerText = `${label} (${val})`;
+});
+
+
+        startBtn.addEventListener('click', () => {
+            renderMode = renderStyleSelect.value;
+            clothBaseColor = hexToRgb(colorPicker.value);
+
+            if (imagePicker.files && imagePicker.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    clothImage = new Image();
+                    clothImage.onload = () => initSimulation();
+                    clothImage.src = event.target.result;
+                }
+                reader.readAsDataURL(imagePicker.files[0]);
+            } else {
+                initSimulation();
+            }
+        });
+
+        function initSimulation() {
+            startScreen.style.display = 'none';
+            canvas.style.display = 'block';
+            modeBtn.style.display = 'block';
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const divisorDensidad = parseInt(polyCountSlider.value); 
+            const porcentajeAlto = 0.85; 
+
+            spacing = canvas.width / divisorDensidad; 
+            cols = Math.floor(canvas.width / spacing);
+            rows = Math.floor((canvas.height * porcentajeAlto) / spacing); 
+            const startX = (canvas.width - cols * spacing) / 2;
+            const startY = 20; 
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    P.push({
+                        x: startX + x * spacing,
+                        y: startY + y * spacing,
+                        old_x: startX + x * spacing,
+                        old_y: startY + y * spacing,
+                        pinned: y === 0 
+                    });
+                }
+            }
+
+            for (let i = 0; i < P.length; i++) {
+                if ((i + 1) % cols !== 0) S.push({ p1: i, p2: i + 1, active: true });
+                if (i < P.length - cols) S.push({ p1: i, p2: i + cols, active: true });
+            }
+
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(state => { 
+                        if (state === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                        } else {
+                            gravityX = 0; gravityY = 0.5;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        gravityX = 0; gravityY = 0.5;
+                    });
+            } else {
+                window.addEventListener('deviceorientation', handleOrientation);
+            }
+
+            isSimulating = true;
+            loop();
+        }
+
+        function handleOrientation(event) {
+            if (event.gamma !== null && event.beta !== null) {
+                let tiltX = Math.max(-90, Math.min(90, event.gamma));
+                let tiltY = event.beta;
+                gravityX = tiltX / 30; 
+                gravityY = tiltY / 30;
+            } else {
+                gravityX = 0; 
+                gravityY = 0.5;
+            }
+        }
+
+        modeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            cutMode = !cutMode;
+            modeBtn.innerText = cutMode ? "Modo: Cortar ✂️" : "Modo: Arrastrar 🖐️";
+            modeBtn.style.backgroundColor = cutMode ? "#ff4444" : "rgb(0, 255, 150)";
+            modeBtn.style.color = cutMode ? "#fff" : "rgb(0, 5, 10)";
+        });
+
+        function updatePointer(e) {
+            if (e.touches && e.touches.length > 0) {
+                touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+            } else {
+                touchX = e.clientX; touchY = e.clientY;
+            }
+        }
+
+        // --- CORRECCIÓN DE INTERACCIÓN ---
+        const startInteraction = (e) => { 
+            // Solo actuar si ya estamos simulando y el objetivo es el canvas
+            if(!isSimulating || e.target !== canvas) return;
+            isTouching = true; updatePointer(e); 
+        };
+        const moveInteraction = (e) => { 
+            if(!isSimulating) return;
+            if(isTouching) updatePointer(e); 
+            // Evitar scroll en móviles SOLO cuando arrastramos la tela
+            if (e.cancelable && e.target === canvas) e.preventDefault(); 
+        };
+        const endInteraction = () => { 
+            isTouching = false; touchX = -1000; touchY = -1000; 
+        };
+
+        window.addEventListener('touchstart', startInteraction, {passive: false});
+        window.addEventListener('touchmove', moveInteraction, {passive: false});
+        window.addEventListener('touchend', endInteraction);
+        window.addEventListener('mousedown', startInteraction);
+        window.addEventListener('mousemove', moveInteraction);
+        window.addEventListener('mouseup', endInteraction);
+
+        function textureMap(ctx, img, x0, y0, u0, v0, x1, y1, u1, v1, x2, y2, u2, v2) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.closePath();
+            ctx.clip(); 
+
+            let delta = u0*v1 + v0*u2 + u1*v2 - v1*u2 - v0*u1 - u0*v2;
+            if (delta !== 0) {
+                let a = (x0*v1 + v0*x2 + x1*v2 - v1*x2 - v0*x1 - x0*v2) / delta;
+                let b = (y0*v1 + v0*y2 + y1*v2 - v1*y2 - v0*y1 - y0*v2) / delta;
+                let c = (u0*x1 + x0*u2 + u1*x2 - x1*u2 - x0*u1 - u0*x2) / delta;
+                let d = (u0*y1 + y0*u2 + u1*y2 - y1*u2 - y0*u1 - u0*y2) / delta;
+                let e = (u0*v1*x2 + v0*x1*u2 + x0*u1*v2 - x0*v1*u2 - v0*u1*x2 - u0*x1*v2) / delta;
+                let f = (u0*v1*y2 + v0*y1*u2 + y0*u1*v2 - y0*v1*u2 - v0*u1*y2 - u0*y1*v2) / delta;
+                
+                ctx.transform(a, b, c, d, e, f);
+                ctx.drawImage(img, 0, 0);
+            }
+            ctx.restore();
+        }
+
+        function loop() {
+            if (!isSimulating) return;
+
+            ctx.fillStyle = 'rgb(5, 7, 12)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let p of P) {
+                if (!p.pinned) {
+                    if (isTouching && !cutMode) {
+                        const dx = p.x - touchX;
+                        const dy = p.y - touchY;
+                        if (Math.hypot(dx, dy) < 80) {
+                            p.x -= dx * 0.3; 
+                            p.y -= dy * 0.3;
+                        }
+                    }
+
+                    const vx = Math.max(-25, Math.min(25, (p.x - p.old_x) * 0.99));
+                    const vy = Math.max(-25, Math.min(25, (p.y - p.old_y) * 0.99));
+
+                    p.old_x = p.x; p.old_y = p.y;
+                    p.x += vx + gravityX;
+                    p.y += vy + gravityY; 
+                }
+            }
+
+            for (let iter = 0; iter < 5; iter++) {
+                for (let sk of S) {
+                    if (!sk.active) continue;
+
+                    const p1 = P[sk.p1];
+                    const p2 = P[sk.p2];
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const d = Math.hypot(dx, dy) || 0.1;
+
+                    if (d > spacing * 7) { sk.active = false; continue; }
+
+                    if (isTouching && cutMode) {
+                        const midX = (p1.x + p2.x) / 2;
+                        const midY = (p1.y + p2.y) / 2;
+                        if (Math.hypot(midX - touchX, midY - touchY) < 40) {
+                            sk.active = false; continue;
+                        }
+                    }
+
+                    const f = (spacing - d) / d * 0.5;
+                    
+                    if (!p1.pinned) { p1.x -= dx * f; p1.y -= dy * f; }
+                    if (!p2.pinned) { p2.x += dx * f; p2.y += dy * f; }
+                }
+            }
+
+            if (renderMode === 'wireframe' && !clothImage) {
+                ctx.strokeStyle = `rgb(${clothBaseColor.r}, ${clothBaseColor.g}, ${clothBaseColor.b})`;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                for (let sk of S) {
+                    if (sk.active) {
+                        const p1 = P[sk.p1];
+                        const p2 = P[sk.p2];
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                    }
+                }
+                ctx.stroke();
+            } else {
+                let imgW = clothImage ? clothImage.width : 0;
+                let imgH = clothImage ? clothImage.height : 0;
+                let stepU = clothImage ? imgW / cols : 0;
+                let stepV = clothImage ? imgH / rows : 0;
+
+                for (let y = 0; y < rows - 1; y++) {
+                    for (let x = 0; x < cols - 1; x++) {
+                        const i = y * cols + x;
+                        const p1 = P[i];                 
+                        const p2 = P[i + 1];             
+                        const p3 = P[i + cols + 1];      
+                        const p4 = P[i + cols];          
+
+                        const dist1 = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                        const dist2 = Math.hypot(p2.x - p3.x, p2.y - p3.y);
+                        const dist3 = Math.hypot(p3.x - p4.x, p3.y - p4.y);
+                        const dist4 = Math.hypot(p4.x - p1.x, p4.y - p1.y);
+                        if (dist1 > spacing * 3 || dist2 > spacing * 3 || dist3 > spacing * 3 || dist4 > spacing * 3) continue;
+
+                        if (clothImage) {
+                            let u0 = x * stepU, v0 = y * stepV;
+                            let u1 = (x+1) * stepU, v1 = y * stepV;
+                            let u2 = (x+1) * stepU, v2 = (y+1) * stepV;
+                            let u3 = x * stepU, v3 = (y+1) * stepV;
+
+                            textureMap(ctx, clothImage, p1.x, p1.y, u0, v0, p2.x, p2.y, u1, v1, p3.x, p3.y, u2, v2);
+                            textureMap(ctx, clothImage, p1.x, p1.y, u0, v0, p3.x, p3.y, u2, v2, p4.x, p4.y, u3, v3);
+                        } else {
+                            const crossProduct = (p2.x - p1.x) * (p4.y - p1.y) - (p2.y - p1.y) * (p4.x - p1.x);
+                            const baseArea = spacing * spacing;
+                            let shade = (crossProduct / baseArea) * 40; 
+                            
+                            let r = Math.max(0, Math.min(255, clothBaseColor.r + shade - 20));
+                            let g = Math.max(0, Math.min(255, clothBaseColor.g + shade - 20));
+                            let b = Math.max(0, Math.min(255, clothBaseColor.b + shade - 20));
+
+                            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                            ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`; 
+                            ctx.lineWidth = 0.5; 
+
+                            ctx.beginPath();
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.lineTo(p3.x, p3.y);
+                            ctx.lineTo(p4.x, p4.y);
+                            ctx.closePath();
+                            
+                            ctx.fill();
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        window.addEventListener('resize', () => {
+            if (isSimulating) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
+    </script>
+</body>
+</html>
