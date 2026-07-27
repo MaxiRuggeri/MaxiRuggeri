@@ -1,6 +1,7 @@
 
 👋 Hola, yo soy Maxi Ruggeri
 - 🌱 Pricipiante, Aprendiendo de a poco independientemente
+- Estudiante de Ingenieria Informatica en la Universidad Nacional Arturo Jauretche
 <!---
 MaxiRuggeri/MaxiRuggeri is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 You can click the Preview link to take a look at your changes.
