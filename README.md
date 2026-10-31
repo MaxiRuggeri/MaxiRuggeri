@@ -10,10 +10,8 @@
 
   > *"Los locos son los que mueven el mundo"*
 
-  <img src="https://readmes.pages.dev/clock/america-buenos_aires/seconds/date" alt="Fecha y hora de Buenos Aires, Argentina" />
-
 </div>
-
+<img src="https://readmes.pages.dev/clock/america-buenos_aires/seconds/date" alt="Fecha y hora de Buenos Aires, Argentina" />
 ---
 
 ### Sobre mí
@@ -33,8 +31,6 @@
 [![C++](https://img.shields.io/badge/C++-00599C?style=flat-square&logo=c%2B%2B&logoColor=white)](https://isocpp.org)
 [![C#](https://img.shields.io/badge/C%23-239120?style=flat-square&logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
 [![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-
-#### Desarrollo Web y Bases de Datos
 
 [![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)](https://developer.mozilla.org/es/docs/Web/HTML)
 [![HTML Legacy](https://img.shields.io/badge/HTML-Legacy-E34F26?style=flat-square&logo=html5&logoColor=white)](https://developer.mozilla.org/es/docs/Web/HTML)
