@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -13,14 +14,18 @@
             font-family: sans-serif;
             color: white;
         }
+
         canvas {
             display: none;
-            touch-action: none; 
+            touch-action: none;
         }
-        
+
         #pantallaInicio {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -31,18 +36,24 @@
             box-sizing: border-box;
             text-align: center;
         }
+
         .tarjeta {
             background-color: rgba(20, 30, 45, 0.9);
             padding: 30px;
             border-radius: 15px;
             border: 2px solid rgb(0, 255, 150);
-            box-shadow: 0 10px 30px rgba(0,255,150,0.2);
+            box-shadow: 0 10px 30px rgba(0, 255, 150, 0.2);
             max-width: 400px;
             width: 100%;
             max-height: 95vh;
             overflow-y: auto;
         }
-        h2 { margin-top: 0; color: rgb(0, 255, 150); }
+
+        h2 {
+            margin-top: 0;
+            color: rgb(0, 255, 150);
+        }
+
         .grupo-entrada {
             margin: 15px 0;
             display: flex;
@@ -50,20 +61,24 @@
             gap: 8px;
             text-align: left;
         }
-        select, input[type="file"] {
-            background: rgba(0,0,0,0.3);
+
+        select,
+        input[type="file"] {
+            background: rgba(0, 0, 0, 0.3);
             padding: 12px;
             border-radius: 8px;
             color: white;
             font-size: 14px;
             width: 100%;
             box-sizing: border-box;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
+
         select option {
             background-color: rgb(20, 30, 45);
             color: white;
         }
+
         input[type="color"] {
             width: 100%;
             height: 45px;
@@ -71,16 +86,19 @@
             border-radius: 8px;
             cursor: pointer;
         }
+
         input[type="range"] {
             accent-color: rgb(0, 255, 150);
             width: 100%;
             cursor: pointer;
         }
+
         .etiqueta-deslizador {
             display: flex;
             justify-content: space-between;
             font-size: 14px;
         }
+
         .btn-iniciar {
             background-color: rgb(0, 255, 150);
             color: rgb(5, 7, 12);
@@ -94,7 +112,10 @@
             margin-top: 15px;
             transition: transform 0.1s;
         }
-        .btn-iniciar:active { transform: scale(0.95); }
+
+        .btn-iniciar:active {
+            transform: scale(0.95);
+        }
 
         #btnModo {
             display: none;
@@ -109,10 +130,16 @@
             border: none;
             background-color: rgb(0, 255, 150);
             color: rgb(0, 5, 10);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             z-index: 10;
             cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
         }
+
+        #btnModo:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+
         .texto-advertencia {
             color: #ff4444;
             font-size: 11px;
@@ -122,19 +149,21 @@
         }
     </style>
 </head>
+
 <body>
 
     <div id="pantallaInicio">
         <div class="tarjeta">
             <h2>Diseña tu Tela</h2>
-            
+
             <div class="grupo-entrada">
                 <div class="etiqueta-deslizador">
                     <span>Resolución:</span>
                     <span id="valorPoligonos" style="font-weight:bold;">Media (20)</span>
                 </div>
                 <input type="range" id="sliderPoligonos" min="10" max="150" value="20">
-                <span id="advertenciaLag" class="texto-advertencia">⚠️ CUIDADO: Valores extremos pueden trabar tu dispositivo.</span>
+                <span id="advertenciaLag" class="texto-advertencia">⚠️ CUIDADO: Valores extremos pueden trabar tu
+                    dispositivo.</span>
             </div>
 
             <div class="grupo-entrada">
@@ -162,7 +191,7 @@
     </div>
 
     <canvas id="lienzo"></canvas>
-    <button id="btnModo">Modo: Arrastrar 🖐️</button>
+    <button id="btnModo">🖐️</button>
 
     <script>
         const pantallaInicio = document.getElementById('pantallaInicio');
@@ -177,22 +206,24 @@
         const advertenciaLag = document.getElementById('advertenciaLag');
         const ctx = lienzo.getContext('2d');
 
-        let imagenTela = null; 
-        let colorBaseTela = {r: 150, g: 84, b: 255}; 
-        let modoRenderizado = 'solido'; 
+        let imagenTela = null;
+        let cadenaBase64Actual = '';
+        let colorBaseTela = { r: 150, g: 84, b: 255 };
+        let modoRenderizado = 'solido';
         let estaSimulando = false;
 
-        const Puntos = []; 
-        const Enlaces = []; 
-        let EnlacesH = []; 
-        let EnlacesV = []; 
-        
+        const Puntos = [];
+        const Enlaces = [];
+        let EnlacesH = [];
+        let EnlacesV = [];
+
         let columnas, filas, espaciado;
         let gravedadX = 0;
-        let gravedadY = 0.5; 
+        let gravedadY = 0.5;
 
         let estaTocando = false;
         let toqueX = -1000, toqueY = -1000;
+        let anteriorToqueX = -1000, anteriorToqueY = -1000;
         let modoCorte = false;
 
         function hexARgb(hex) {
@@ -200,40 +231,97 @@
             return { r: (entero >> 16) & 255, g: (entero >> 8) & 255, b: entero & 255 };
         }
 
-        sliderPoligonos.addEventListener('input', (evento) => {
-            let valor = parseInt(evento.target.value);
+        function actualizarEtiquetaPoligonos(valor) {
             let etiqueta = "Media";
-            
             if (valor <= 20) etiqueta = "Baja";
             else if (valor >= 100) etiqueta = "Fritapapas 💻🔥";
             else if (valor >= 70) etiqueta = "Locura";
             else if (valor >= 40) etiqueta = "Alta";
 
             valorPoligonos.innerText = `${etiqueta} (${valor})`;
-            
-            if(valor >= 80) {
+
+            if (valor >= 80) {
                 advertenciaLag.style.display = "block";
                 valorPoligonos.style.color = "#ff4444";
             } else {
                 advertenciaLag.style.display = "none";
                 valorPoligonos.style.color = "white";
             }
+        }
+
+        sliderPoligonos.addEventListener('input', (evento) => {
+            actualizarEtiquetaPoligonos(parseInt(evento.target.value));
         });
+
+        // Optimiza y comprime la imagen a un Base64 manejable para que la URL en el navegador sea ligera
+        function procesarImagenArchivo(archivo, alTerminar) {
+            const lector = new FileReader();
+            lector.onload = function (evento) {
+                const imgTemp = new Image();
+                imgTemp.onload = function () {
+                    const maxDim = 500;
+                    let ancho = imgTemp.width;
+                    let alto = imgTemp.height;
+                    if (ancho > maxDim || alto > maxDim) {
+                        if (ancho > alto) {
+                            alto = Math.round(alto * (maxDim / ancho));
+                            ancho = maxDim;
+                        } else {
+                            ancho = Math.round(ancho * (maxDim / alto));
+                            alto = maxDim;
+                        }
+                    }
+                    const canvasTemp = document.createElement('canvas');
+                    canvasTemp.width = ancho;
+                    canvasTemp.height = alto;
+                    const ctxTemp = canvasTemp.getContext('2d');
+                    ctxTemp.drawImage(imgTemp, 0, 0, ancho, alto);
+                    const base64Comprimido = canvasTemp.toDataURL('image/jpeg', 0.85);
+                    cadenaBase64Actual = base64Comprimido;
+                    alTerminar(base64Comprimido);
+                };
+                imgTemp.src = evento.target.result;
+            };
+            lector.readAsDataURL(archivo);
+        }
+
+        selectorImagen.addEventListener('change', () => {
+            if (selectorImagen.files && selectorImagen.files[0]) {
+                procesarImagenArchivo(selectorImagen.files[0], (base64) => {
+                    imagenTela = new Image();
+                    imagenTela.src = base64;
+                });
+            } else {
+                cadenaBase64Actual = '';
+                imagenTela = null;
+            }
+        });
+
+        function generarHashRedireccion() {
+            const params = new URLSearchParams();
+            params.set('tamaño', sliderPoligonos.value);
+            params.set('estilo', selectorEstiloRender.value);
+            params.set('color', selectorColor.value);
+            if (cadenaBase64Actual) {
+                params.set('base64', cadenaBase64Actual);
+            }
+            return '#' + params.toString();
+        }
 
         btnIniciar.addEventListener('click', () => {
             modoRenderizado = selectorEstiloRender.value;
             colorBaseTela = hexARgb(selectorColor.value);
 
-            if (selectorImagen.files && selectorImagen.files[0]) {
-                const lector = new FileReader();
-                lector.onload = function(evento) {
+            if (selectorImagen.files && selectorImagen.files[0] && !cadenaBase64Actual) {
+                procesarImagenArchivo(selectorImagen.files[0], (base64) => {
                     imagenTela = new Image();
-                    imagenTela.onload = () => iniciarSimulacion();
-                    imagenTela.src = evento.target.result;
-                }
-                lector.readAsDataURL(selectorImagen.files[0]);
+                    imagenTela.onload = () => {
+                        window.location.hash = generarHashRedireccion();
+                    };
+                    imagenTela.src = base64;
+                });
             } else {
-                iniciarSimulacion();
+                window.location.hash = generarHashRedireccion();
             }
         });
 
@@ -241,43 +329,53 @@
             pantallaInicio.style.display = 'none';
             lienzo.style.display = 'block';
             btnModo.style.display = 'block';
-            
+
             lienzo.width = window.innerWidth;
             lienzo.height = window.innerHeight;
 
             Puntos.length = 0;
             Enlaces.length = 0;
+            puntosAgarrados.length = 0;
 
-            let divisorDensidad = parseInt(sliderPoligonos.value); 
+            let divisorDensidad = parseInt(sliderPoligonos.value);
             const anchoMaximo = lienzo.width * 0.90;
             const altoMaximo = lienzo.height * 0.80;
-            
+
             let anchoTela = anchoMaximo;
             let altoTela = altoMaximo;
 
+            // --- CÁLCULO GEOMÉTRICO 1: Ajuste de Aspect Ratio (Proporción de Pantalla e Imagen) ---
+            // Si hay una imagen, adaptamos el rectángulo de la tela para que no se deforme:
+            // aspecto = ancho / alto. Comparamos aspectoImagen con aspectoPantalla para hacer "contain"
             if (imagenTela) {
                 const aspectoImagen = imagenTela.width / imagenTela.height;
                 const aspectoPantalla = anchoMaximo / altoMaximo;
                 if (aspectoImagen > aspectoPantalla) {
-                    altoTela = anchoMaximo / aspectoImagen;
+                    altoTela = anchoMaximo / aspectoImagen; // Limitado por ancho
                 } else {
-                    anchoTela = altoMaximo * aspectoImagen;
+                    anchoTela = altoMaximo * aspectoImagen; // Limitado por alto
                 }
             }
 
+            // --- CÁLCULO GEOMÉTRICO 2: Discretización de la Malla (Nodos y Espaciado) ---
+            // espaciado = distancia euclidiana de reposo entre dos nodos adyacentes
             columnas = divisorDensidad;
             espaciado = anchoTela / (columnas - 1);
 
+            // Umbral mínimo de 6px por celda para evitar singularidades y cuelgues por exceso de nodos
             if (espaciado < 6) {
                 espaciado = 6;
                 columnas = Math.floor(anchoTela / espaciado) + 1;
             }
 
+            // Cantidad de filas calculadas para mantener celdas perfectamente cuadradas
             filas = Math.max(2, Math.round(altoTela / espaciado) + 1);
-            if (filas > 120) filas = 120;
+            if (filas > 120) filas = 120; // Techo máximo de seguridad
 
+            // --- CÁLCULO GEOMÉTRICO 3: Centrado Espacial Horizontal en el Canvas ---
+            // inicioX desplaza el origen de la tela para que quede exactamente simétrica: (W_canvas - W_tela) / 2
             const inicioX = (lienzo.width - (columnas - 1) * espaciado) / 2;
-            const inicioY = 20; 
+            const inicioY = 20;
 
             for (let y = 0; y < filas; y++) {
                 for (let x = 0; x < columnas; x++) {
@@ -286,7 +384,8 @@
                         y: inicioY + y * espaciado,
                         viejoX: inicioX + x * espaciado,
                         viejoY: inicioY + y * espaciado,
-                        fijo: y === 0 
+                        fijo: y === 0, // Condición de frontera de Dirichlet: fila 0 anclada en el espacio
+                        agarrado: false
                     });
                 }
             }
@@ -309,7 +408,7 @@
 
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission()
-                    .then(estado => { 
+                    .then(estado => {
                         if (estado === 'granted') window.addEventListener('deviceorientation', manejarOrientacion);
                         else { gravedadX = 0; gravedadY = 0.5; }
                     })
@@ -322,86 +421,211 @@
             bucleAnimacion();
         }
 
-        // --- SISTEMA CORREGIDO: Giroscopio inteligente y modo reposo ---
+        // --- SISTEMA NATIVO DE REDIRECCIONES Y RETROCESO (Hash URL & Navegador) ---
+        function procesarCambioDeHash() {
+            let hash = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
+            if (!hash && window.location.search) {
+                hash = window.location.search.substring(1);
+            }
+
+            // Si el hash está vacío (el usuario presionó "Atrás/Retroceder" en el navegador)
+            if (!hash) {
+                if (estaSimulando) {
+                    estaSimulando = false;
+                    lienzo.style.display = 'none';
+                    btnModo.style.display = 'none';
+                    pantallaInicio.style.display = 'flex';
+                }
+                return;
+            }
+
+            const params = new URLSearchParams(hash);
+            const tamaño = params.get('tamaño');
+            const base64 = params.get('base64');
+            const color = params.get('color');
+            const estilo = params.get('estilo');
+
+            if (tamaño) {
+                sliderPoligonos.value = tamaño;
+                actualizarEtiquetaPoligonos(parseInt(tamaño));
+            }
+            if (estilo) {
+                selectorEstiloRender.value = estilo;
+                modoRenderizado = estilo;
+            }
+            if (color) {
+                selectorColor.value = color.startsWith('#') ? color : '#' + color;
+                colorBaseTela = hexARgb(selectorColor.value);
+            }
+
+            if (base64) {
+                cadenaBase64Actual = base64;
+                imagenTela = new Image();
+                imagenTela.onload = () => {
+                    iniciarSimulacion();
+                };
+                imagenTela.src = base64;
+            } else if (tamaño || color || estilo) {
+                iniciarSimulacion();
+            }
+        }
+
+        window.addEventListener('hashchange', procesarCambioDeHash);
+        window.addEventListener('DOMContentLoaded', procesarCambioDeHash);
+
+        // --- CÁLCULO FÍSICO 1: Giroscopio y Vector de Aceleración Gravitatoria ---
+        // Transforma las coordenadas angulares de Euler (Beta y Gamma) según la rotación de pantalla
         function manejarOrientacion(evento) {
             if (evento.gamma !== null && evento.beta !== null) {
-                // Leemos la rotación real de la pantalla del celular
                 let orientacion = (window.screen && window.screen.orientation) ? window.screen.orientation.angle : (window.orientation || 0);
-                
-                let beta = evento.beta;   // -180 a 180 (Adelante/Atrás)
-                let gamma = evento.gamma; // -90 a 90   (Izquierda/Derecha)
-                
-                let inX = 0; 
+
+                let beta = evento.beta;   // Rotación frontal: pitch [-180, 180]
+                let gamma = evento.gamma; // Inclinación lateral: roll [-90, 90]
+
+                let inX = 0;
                 let inY = 0;
-                
-                // Transponer ejes según cómo esté rotada la pantalla (Landscape/Portrait)
-                if (orientacion === 90) { 
-                    inX = beta; 
-                    inY = -gamma; 
-                } else if (orientacion === -90 || orientacion === 270) { 
-                    inX = -beta; 
-                    inY = gamma; 
-                } else if (orientacion === 180) { 
-                    inX = -gamma; 
-                    inY = -beta; 
-                } else { 
-                    inX = gamma; 
-                    inY = beta; 
+
+                // Rotación de matriz 2D simplificada (0°, 90°, 180°, 270°) para proyectar el vector g sobre el plano de pantalla
+                if (orientacion === 90) {
+                    inX = beta;
+                    inY = -gamma;
+                } else if (orientacion === -90 || orientacion === 270) {
+                    inX = -beta;
+                    inY = gamma;
+                } else if (orientacion === 180) {
+                    inX = -gamma;
+                    inY = -beta;
+                } else {
+                    inX = gamma;
+                    inY = beta;
                 }
 
-                // Si el celular está acostado plano en la mesa (inclinaciones casi cero)
-                // Forzamos un poco de gravedad artificial para que no flote en gravedad cero.
+                // Zona muerta artificial: si el móvil está plano sobre una mesa, inducimos gravedad mínima en Y (15°)
+                // para evitar singularidad en gravedad cero donde la tela flota sin tensión
                 if (Math.abs(inY) < 15 && Math.abs(inX) < 15) {
                     inY = 15;
                 }
 
+                // Clamping angular [-90, 90] y escala a aceleración física en píxeles/frame^2
                 inX = Math.max(-90, Math.min(90, inX));
-                
-                gravedadX = inX / 30; 
+
+                gravedadX = inX / 30;
                 gravedadY = inY / 30;
             } else {
-                gravedadX = 0; 
-                gravedadY = 0.5;
+                gravedadX = 0;
+                gravedadY = 0.5; // Gravedad constante de referencia hacia abajo
             }
         }
 
         btnModo.addEventListener('click', (evento) => {
             evento.preventDefault();
             modoCorte = !modoCorte;
-            btnModo.innerText = modoCorte ? "Modo: Cortar ✂️" : "Modo: Arrastrar 🖐️";
+            if (modoCorte) soltarAgarre(0, 0);
+            btnModo.innerText = modoCorte ? "✂️" : "🖐️";
             btnModo.style.backgroundColor = modoCorte ? "#ff4444" : "rgb(0, 255, 150)";
             btnModo.style.color = modoCorte ? "#fff" : "rgb(0, 5, 10)";
         });
 
         function actualizarPuntero(evento) {
             if (evento.touches && evento.touches.length > 0) {
-                toqueX = evento.touches[0].clientX; 
+                toqueX = evento.touches[0].clientX;
                 toqueY = evento.touches[0].clientY;
             } else {
-                toqueX = evento.clientX; 
+                toqueX = evento.clientX;
                 toqueY = evento.clientY;
             }
         }
 
-        const iniciarInteraccion = (evento) => { 
-            if(!estaSimulando || evento.target !== lienzo) return;
-            estaTocando = true; 
-            actualizarPuntero(evento); 
-        };
-        const moverInteraccion = (evento) => { 
-            if(!estaSimulando) return;
-            if(estaTocando) actualizarPuntero(evento); 
-            if (evento.cancelable && evento.target === lienzo) evento.preventDefault(); 
-        };
-        const terminarInteraccion = () => { estaTocando = false; toqueX = -1000; toqueY = -1000; };
+        // --- SISTEMA DE AGARRE CINEMÁTICO REALISTA (Pinzado sin colapso) ---
+        // Al interactuar con la tela, pinzamos los nodos bajo el cursor preservando sus distancias relativas
+        // (offset constante). Esto otorga un agarre 100% firme y realista, impidiendo que los nodos colapsen en un punto negro.
+        let puntosAgarrados = [];
 
-        window.addEventListener('touchstart', iniciarInteraccion, {passive: false});
-        window.addEventListener('touchmove', moverInteraccion, {passive: false});
+        function intentarAgarrar() {
+            if (puntosAgarrados.length > 0 || modoCorte) return;
+            const radioAgarre = Math.max(espaciado * 1.4, 30);
+            const radioAgarreSq = radioAgarre * radioAgarre;
+
+            let puntoMasCercano = null;
+            let minDistSq = Infinity;
+
+            for (let i = 0; i < Puntos.length; i++) {
+                const p = Puntos[i];
+                if (p.fijo) continue;
+                const dx = p.x - toqueX;
+                const dy = p.y - toqueY;
+                const d2 = dx * dx + dy * dy;
+                if (d2 < radioAgarreSq) {
+                    p.agarrado = true;
+                    puntosAgarrados.push({ punto: p, offsetX: dx, offsetY: dy });
+                }
+                if (d2 < minDistSq) {
+                    minDistSq = d2;
+                    puntoMasCercano = p;
+                }
+            }
+
+            // Si ningún punto entró en el radio exacto pero hay uno a distancia de alcance (< 60px), lo tomamos
+            if (puntosAgarrados.length === 0 && puntoMasCercano && minDistSq < 3600 && !puntoMasCercano.fijo) {
+                puntoMasCercano.agarrado = true;
+                puntosAgarrados.push({
+                    punto: puntoMasCercano,
+                    offsetX: puntoMasCercano.x - toqueX,
+                    offsetY: puntoMasCercano.y - toqueY
+                });
+            }
+        }
+
+        function soltarAgarre(deltaX, deltaY) {
+            for (let i = 0; i < puntosAgarrados.length; i++) {
+                const item = puntosAgarrados[i];
+                item.punto.agarrado = false;
+                // Al soltar, transfiere el impulso de la mano para arrojar o sacudir la tela
+                item.punto.viejoX = item.punto.x - deltaX * 0.9;
+                item.punto.viejoY = item.punto.y - deltaY * 0.9;
+            }
+            puntosAgarrados.length = 0;
+        }
+
+        const iniciarInteraccion = (evento) => {
+            if (!estaSimulando || evento.target !== lienzo) return;
+            estaTocando = true;
+            actualizarPuntero(evento);
+            anteriorToqueX = toqueX;
+            anteriorToqueY = toqueY;
+            if (!modoCorte) {
+                intentarAgarrar();
+            }
+        };
+        const moverInteraccion = (evento) => {
+            if (!estaSimulando) return;
+            if (estaTocando) actualizarPuntero(evento);
+            if (evento.cancelable && evento.target === lienzo) evento.preventDefault();
+        };
+        const terminarInteraccion = () => {
+            let dx = anteriorToqueX > -500 ? (toqueX - anteriorToqueX) : 0;
+            let dy = anteriorToqueY > -500 ? (toqueY - anteriorToqueY) : 0;
+            soltarAgarre(dx, dy);
+            estaTocando = false;
+            toqueX = -1000;
+            toqueY = -1000;
+            anteriorToqueX = -1000;
+            anteriorToqueY = -1000;
+        };
+
+        window.addEventListener('touchstart', iniciarInteraccion, { passive: false });
+        window.addEventListener('touchmove', moverInteraccion, { passive: false });
         window.addEventListener('touchend', terminarInteraccion);
         window.addEventListener('mousedown', iniciarInteraccion);
         window.addEventListener('mousemove', moverInteraccion);
         window.addEventListener('mouseup', terminarInteraccion);
 
+        // --- CÁLCULO MATEMÁTICO 2: Mapeo de Textura Afín por Regla de Cramer ---
+        // Resuelve el sistema lineal para mapear un triángulo UV de la textura al triángulo deformado en pantalla:
+        // [x]   [a  c  e] [u]
+        // [y] = [b  d  f] [v]
+        // [1]   [0  0  1] [1]
+        // delta es el determinante de la matriz UV (proporcional al área del triángulo en espacio de textura).
         function mapearTextura(ctx, img, x0, y0, u0, v0, x1, y1, u1, v1, x2, y2, u2, v2) {
             ctx.save();
             ctx.beginPath();
@@ -409,96 +633,200 @@
             ctx.lineTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.closePath();
-            ctx.clip(); 
+            ctx.clip(); // Limita la rasterización exclusivamente al interior del triángulo
 
-            let delta = u0*v1 + v0*u2 + u1*v2 - v1*u2 - v0*u1 - u0*v2;
+            // Determinante (2 * Área del triángulo UV)
+            let delta = u0 * v1 + v0 * u2 + u1 * v2 - v1 * u2 - v0 * u1 - u0 * v2;
             if (delta !== 0) {
-                let a = (x0*v1 + v0*x2 + x1*v2 - v1*x2 - v0*x1 - x0*v2) / delta;
-                let b = (y0*v1 + v0*y2 + y1*v2 - v1*y2 - v0*y1 - y0*v2) / delta;
-                let c = (u0*x1 + x0*u2 + u1*x2 - x1*u2 - x0*u1 - u0*x2) / delta;
-                let d = (u0*y1 + y0*u2 + u1*y2 - y1*u2 - y0*u1 - u0*y2) / delta;
-                let e = (u0*v1*x2 + v0*x1*u2 + x0*u1*v2 - x0*v1*u2 - v0*u1*x2 - u0*x1*v2) / delta;
-                let f = (u0*v1*y2 + v0*y1*u2 + y0*u1*v2 - y0*v1*u2 - v0*u1*y2 - u0*y1*v2) / delta;
-                
-                ctx.transform(a, b, c, d, e, f);
+                // Coeficientes de la matriz de transformación afín 2D derivados analíticamente
+                let a = (x0 * v1 + v0 * x2 + x1 * v2 - v1 * x2 - v0 * x1 - x0 * v2) / delta;
+                let b = (y0 * v1 + v0 * y2 + y1 * v2 - v1 * y2 - v0 * y1 - y0 * v2) / delta;
+                let c = (u0 * x1 + x0 * u2 + u1 * x2 - x1 * u2 - x0 * u1 - u0 * x2) / delta;
+                let d = (u0 * y1 + y0 * u2 + u1 * y2 - y1 * u2 - y0 * u1 - u0 * y2) / delta;
+                let e = (u0 * v1 * x2 + v0 * x1 * u2 + x0 * u1 * v2 - x0 * v1 * u2 - v0 * u1 * x2 - u0 * x1 * v2) / delta;
+                let f = (u0 * v1 * y2 + v0 * y1 * u2 + y0 * u1 * v2 - y0 * v1 * u2 - v0 * u1 * y2 - u0 * y1 * v2) / delta;
+
+                ctx.transform(a, b, c, d, e, f); // Aplica la proyección afín
                 ctx.drawImage(img, 0, 0);
             }
             ctx.restore();
         }
 
+        // --- CÁLCULO GEOMÉTRICO: Intersección de Segmentos y Corte Preciso de Tijera ---
+        // Determina si el segmento de corte de la tijera AB corta el segmento del alambre CD
+        function segmentosSeCruzan(x1, y1, x2, y2, x3, y3, x4, y4) {
+            function ccw(ax, ay, bx, by, cx, cy) {
+                return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax);
+            }
+            return (ccw(x1, y1, x3, y3, x4, y4) !== ccw(x2, y2, x3, y3, x4, y4)) &&
+                   (ccw(x1, y1, x2, y2, x3, y3) !== ccw(x1, y1, x2, y2, x4, y4));
+        }
+
+        // Distancia euclidiana mínima entre el punto P(px, py) y el segmento rectilíneo AB(x1, y1)-(x2, y2)
+        function distanciaPuntoASegmento(px, py, x1, y1, x2, y2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const l2 = dx * dx + dy * dy;
+            if (l2 === 0) return Math.hypot(px - x1, py - y1);
+            let t = ((px - x1) * dx + (py - y1) * dy) / l2;
+            t = Math.max(0, Math.min(1, t));
+            const projX = x1 + t * dx;
+            const projY = y1 + t * dy;
+            const diffX = px - projX;
+            const diffY = py - projY;
+            return Math.sqrt(diffX * diffX + diffY * diffY);
+        }
+
         function bucleAnimacion() {
             if (!estaSimulando) return;
 
+            const anchoLienzo = lienzo.width;
+            const altoLienzo = lienzo.height;
+
             ctx.fillStyle = 'rgb(5, 7, 12)';
-            ctx.fillRect(0, 0, lienzo.width, lienzo.height);
+            ctx.fillRect(0, 0, anchoLienzo, altoLienzo);
 
-            const limiteEstiramiento = Math.max(espaciado * 8, 45); 
+            // --- CÁLCULO FÍSICO 3: Tensión de Ruptura (Límite Elástico de Hooke) ---
+            // Margen elástico aumentado para permitir interactuar fluidamente sin rasgar accidentalmente la tela.
+            // Para rasgarla se utiliza el modo tijera (✂️) o una deformación extrema inducida.
+            const limiteEstiramiento = Math.max(espaciado * 12, 80);
 
-            // --- SISTEMA CORREGIDO: Compensación Estructural de Peso ---
-            // A mayor cantidad de filas, reducimos matemáticamente el impacto individual de la gravedad 
-            // para que la suma total del peso de la cadena no estire y rompa la tela superior.
-            let factorDureza = Math.max(1, Math.sqrt(filas / 15)); 
+            // --- CÁLCULO FÍSICO 4: Compensación de Carga Gravitatoria Acumulada ---
+            let factorDureza = Math.max(1, Math.sqrt(filas / 15));
             let gravedadAplicadaX = gravedadX / factorDureza;
             let gravedadAplicadaY = gravedadY / factorDureza;
 
-            for (let p of Puntos) {
-                if (!p.fijo) {
-                    if (estaTocando && !modoCorte) {
-                        const distX = p.x - toqueX;
-                        const distY = p.y - toqueY;
-                        if (Math.hypot(distX, distY) < 80) {
-                            p.x -= distX * 0.3; 
-                            p.y -= distY * 0.3;
-                        }
-                    }
+            // Vector de velocidad y desplazamiento del puntero entre frames consecutivos
+            let deltaMouseX = 0;
+            let deltaMouseY = 0;
+            const prevToqueX = anteriorToqueX;
+            const prevToqueY = anteriorToqueY;
 
-                    const velocX = Math.max(-50, Math.min(50, (p.x - p.viejoX) * 0.99));
-                    const velocY = Math.max(-50, Math.min(50, (p.y - p.viejoY) * 0.99));
+            if (estaTocando && anteriorToqueX > -500) {
+                deltaMouseX = toqueX - anteriorToqueX;
+                deltaMouseY = toqueY - anteriorToqueY;
+                const velMax = 35;
+                deltaMouseX = Math.max(-velMax, Math.min(velMax, deltaMouseX));
+                deltaMouseY = Math.max(-velMax, Math.min(velMax, deltaMouseY));
+            }
+            anteriorToqueX = toqueX;
+            anteriorToqueY = toqueY;
 
-                    p.viejoX = p.x; 
-                    p.viejoY = p.y;
-                    
-                    // Aplicamos la gravedad amortiguada
-                    p.x += velocX + gravedadAplicadaX;
-                    p.y += velocY + gravedadAplicadaY; 
+            // Si estamos tocando y no estamos cortando, intentamos agarrar la tela
+            if (estaTocando && !modoCorte && puntosAgarrados.length === 0) {
+                intentarAgarrar();
+            }
+
+            // Sincronización cinemática de los puntos agarrados (mantienen su posición exacta con la mano)
+            const cantAgarrados = puntosAgarrados.length;
+            if (cantAgarrados > 0) {
+                for (let i = 0; i < cantAgarrados; i++) {
+                    const item = puntosAgarrados[i];
+                    const p = item.punto;
+                    p.x = toqueX + item.offsetX;
+                    p.y = toqueY + item.offsetY;
+                    p.viejoX = p.x - deltaMouseX;
+                    p.viejoY = p.y - deltaMouseY;
                 }
             }
 
-            // Subimos las iteraciones a 10 para hacer que la malla sea extremadamente fuerte
-            for (let iteracion = 0; iteracion < 10; iteracion++) {
-                for (let enlace of Enlaces) {
+            // --- CÁLCULO FÍSICO 5: Integración de Verlet para Movimiento y Dinámica de Partículas ---
+            // La formulación de Verlet calcula la nueva posición sin velocidad explícita:
+            // x(t + dt) = x(t) + [x(t) - x(t - dt)] * amortiguacion + a * dt^2
+            const cantPuntos = Puntos.length;
+            for (let i = 0; i < cantPuntos; i++) {
+                const p = Puntos[i];
+                if (!p.fijo && !p.agarrado) {
+                    // Inercia / Velocidad implícita: v = (pos_actual - pos_anterior) * factor_friccion
+                    const velocX = Math.max(-50, Math.min(50, (p.x - p.viejoX) * 0.99));
+                    const velocY = Math.max(-50, Math.min(50, (p.y - p.viejoY) * 0.99));
+
+                    p.viejoX = p.x;
+                    p.viejoY = p.y;
+
+                    // Paso temporal de Verlet: integración de aceleración por gravedad amortiguada
+                    p.x += velocX + gravedadAplicadaX;
+                    p.y += velocY + gravedadAplicadaY;
+                }
+            }
+
+            // --- CÁLCULO FÍSICO 6: Relajación de Restricciones Elásticas (Position-Based Dynamics) ---
+            const cantIteraciones = Math.min(8, Math.max(4, Math.round(columnas / 6)));
+            const cantEnlaces = Enlaces.length;
+
+            for (let iteracion = 0; iteracion < cantIteraciones; iteracion++) {
+                for (let e = 0; e < cantEnlaces; e++) {
+                    const enlace = Enlaces[e];
                     if (!enlace.activo) continue;
 
                     const p1 = Puntos[enlace.p1];
                     const p2 = Puntos[enlace.p2];
                     const distX = p2.x - p1.x;
                     const distY = p2.y - p1.y;
-                    
-                    const distancia = Math.hypot(distX, distY) || 0.01; 
 
+                    // Norma Euclidiana L2: distancia actual entre los dos extremos del enlace
+                    const distancia = Math.sqrt(distX * distX + distY * distY) || 0.01;
+
+                    // Ruptura plástica si supera el límite de estiramiento
                     if (distancia > limiteEstiramiento) { enlace.activo = false; continue; }
 
+                    // --- CORTE PRECISO DE TIJERA (Sin radio artificial):
+                    // El corte ocurre si el segmento trazado por la tijera cruza el alambre
+                    // o si el usuario hace clic exactamente sobre el hilo (tolerancia de 4px)
                     if (estaTocando && modoCorte) {
-                        const medioX = (p1.x + p2.x) / 2;
-                        const medioY = (p1.y + p2.y) / 2;
-                        if (Math.hypot(medioX - toqueX, medioY - toqueY) < 40) {
-                            enlace.activo = false; continue;
+                        let seCruza = false;
+                        if (prevToqueX > -500 && (prevToqueX !== toqueX || prevToqueY !== toqueY)) {
+                            seCruza = segmentosSeCruzan(prevToqueX, prevToqueY, toqueX, toqueY, p1.x, p1.y, p2.x, p2.y);
+                        }
+                        if (!seCruza && distanciaPuntoASegmento(toqueX, toqueY, p1.x, p1.y, p2.x, p2.y) < 4) {
+                            seCruza = true;
+                        }
+                        if (seCruza) {
+                            enlace.activo = false;
+                            continue;
                         }
                     }
 
-                    // Fuerza de recuperación al 50% (Rigidez máxima segura para la matemática)
+                    // Corrección de deformación relativa: delta_L / L * rigidez
                     const fuerza = (espaciado - distancia) / distancia * 0.50;
-                    
-                    if (!p1.fijo) { p1.x -= distX * fuerza; p1.y -= distY * fuerza; }
-                    if (!p2.fijo) { p2.x += distX * fuerza; p2.y += distY * fuerza; }
+
+                    // Puntos fijos o agarrados con la mano actúan como anclas cinemáticas de masa infinita:
+                    const p1Bloqueado = p1.fijo || p1.agarrado;
+                    const p2Bloqueado = p2.fijo || p2.agarrado;
+
+                    if (p1Bloqueado && p2Bloqueado) {
+                        // Ambos puntos están gobernados externamente
+                    } else if (p1Bloqueado) {
+                        p2.x += distX * fuerza * 2;
+                        p2.y += distY * fuerza * 2;
+                    } else if (p2Bloqueado) {
+                        p1.x -= distX * fuerza * 2;
+                        p1.y -= distY * fuerza * 2;
+                    } else {
+                        p1.x -= distX * fuerza;
+                        p1.y -= distY * fuerza;
+                        p2.x += distX * fuerza;
+                        p2.y += distY * fuerza;
+                    }
                 }
             }
 
+            // Fijación final de posición para los puntos agarrados por el cursor
+            if (cantAgarrados > 0) {
+                for (let i = 0; i < cantAgarrados; i++) {
+                    const item = puntosAgarrados[i];
+                    item.punto.x = toqueX + item.offsetX;
+                    item.punto.y = toqueY + item.offsetY;
+                }
+            }
+
+            // --- CÁLCULO GRÁFICO 7: Rasterización y Sombreado Superficial ---
             if (modoRenderizado === 'alambre' && !imagenTela) {
                 ctx.strokeStyle = `rgb(${colorBaseTela.r}, ${colorBaseTela.g}, ${colorBaseTela.b})`;
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
-                for (let enlace of Enlaces) {
+                for (let e = 0; e < cantEnlaces; e++) {
+                    const enlace = Enlaces[e];
                     if (enlace.activo) {
                         const p1 = Puntos[enlace.p1];
                         const p2 = Puntos[enlace.p2];
@@ -512,6 +840,7 @@
                 let altoImg = imagenTela ? imagenTela.height : 0;
                 let pasoU = imagenTela ? anchoImg / (columnas - 1) : 0;
                 let pasoV = imagenTela ? altoImg / (filas - 1) : 0;
+                const areaBase = espaciado * espaciado; // Área cuadrangular en reposo: L^2
 
                 for (let y = 0; y < filas - 1; y++) {
                     for (let x = 0; x < columnas - 1; x++) {
@@ -522,48 +851,59 @@
                         const linkAbajo = EnlacesH[i + columnas];
                         const linkIzquierda = EnlacesV[i];
 
-                        if (!linkArriba || !linkArriba.activo || 
-                            !linkDerecha || !linkDerecha.activo || 
-                            !linkAbajo || !linkAbajo.activo || 
+                        // Si alguno de los 4 bordes del cuadrilátero se rompió, no dibujamos la cara
+                        if (!linkArriba || !linkArriba.activo ||
+                            !linkDerecha || !linkDerecha.activo ||
+                            !linkAbajo || !linkAbajo.activo ||
                             !linkIzquierda || !linkIzquierda.activo) {
                             continue;
                         }
 
-                        const p1 = Puntos[i];                 
-                        const p2 = Puntos[i + 1];             
-                        const p3 = Puntos[i + columnas + 1];      
-                        const p4 = Puntos[i + columnas];          
+                        const p1 = Puntos[i];
+                        const p2 = Puntos[i + 1];
+                        const p3 = Puntos[i + columnas + 1];
+                        const p4 = Puntos[i + columnas];
+
+                        // Descarte de quads fuera de la pantalla (Frustum Culling / Bounding Box)
+                        if ((p1.x < 0 && p2.x < 0 && p3.x < 0 && p4.x < 0) ||
+                            (p1.x > anchoLienzo && p2.x > anchoLienzo && p3.x > anchoLienzo && p4.x > anchoLienzo) ||
+                            (p1.y < 0 && p2.y < 0 && p3.y < 0 && p4.y < 0) ||
+                            (p1.y > altoLienzo && p2.y > altoLienzo && p3.y > altoLienzo && p4.y > altoLienzo)) {
+                            continue;
+                        }
 
                         if (imagenTela) {
+                            // Coordenadas UV normalizadas mapeadas al espacio discreto de la imagen
                             let u0 = x * pasoU, v0 = y * pasoV;
-                            let u1 = (x+1) * pasoU, v1 = y * pasoV;
-                            let u2 = (x+1) * pasoU, v2 = (y+1) * pasoV;
-                            let u3 = x * pasoU, v3 = (y+1) * pasoV;
+                            let u1 = (x + 1) * pasoU, v1 = y * pasoV;
+                            let u2 = (x + 1) * pasoU, v2 = (y + 1) * pasoV;
+                            let u3 = x * pasoU, v3 = (y + 1) * pasoV;
 
+                            // Triangulación de Delaunay trivial: división del quad en dos triángulos (p1-p2-p3) y (p1-p3-p4)
                             mapearTextura(ctx, imagenTela, p1.x, p1.y, u0, v0, p2.x, p2.y, u1, v1, p3.x, p3.y, u2, v2);
                             mapearTextura(ctx, imagenTela, p1.x, p1.y, u0, v0, p3.x, p3.y, u2, v2, p4.x, p4.y, u3, v3);
                         } else {
+                            // --- CÁLCULO VECTORIAL: Producto Cruzado 2D (Pseudo-Normal de Superficie) ---
+                            // Sean los vectores tangentes u = p2 - p1 y v = p4 - p1.
+                            // El producto vectorial en 2D (determinante) mide el área con signo del paralelogramo:
+                            // det = u_x * v_y - u_y * v_x.
+                            // La razón entre el área deformada y el área en reposo indica compresión o estiramiento,
+                            // simulando curvatura tridimensional con sombras dinámicas (Lambertian shading simplificado).
                             const productoCruzado = (p2.x - p1.x) * (p4.y - p1.y) - (p2.y - p1.y) * (p4.x - p1.x);
-                            const areaBase = espaciado * espaciado;
-                            let sombra = (productoCruzado / areaBase) * 40; 
-                            
+                            let sombra = (productoCruzado / areaBase) * 40;
+
                             let r = Math.max(0, Math.min(255, colorBaseTela.r + sombra - 20));
                             let g = Math.max(0, Math.min(255, colorBaseTela.g + sombra - 20));
                             let b = Math.max(0, Math.min(255, colorBaseTela.b + sombra - 20));
 
                             ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                            ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`; 
-                            ctx.lineWidth = 0.8; 
-
                             ctx.beginPath();
                             ctx.moveTo(p1.x, p1.y);
                             ctx.lineTo(p2.x, p2.y);
                             ctx.lineTo(p3.x, p3.y);
                             ctx.lineTo(p4.x, p4.y);
                             ctx.closePath();
-                            
                             ctx.fill();
-                            ctx.stroke();
                         }
                     }
                 }
@@ -580,4 +920,5 @@
         });
     </script>
 </body>
+
 </html>
