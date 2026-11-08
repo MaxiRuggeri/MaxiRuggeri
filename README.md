@@ -1,17 +1,25 @@
 <div align="center">
   <!-- Banner de encabezado -->
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=50,120,330,45&height=200&section=header&text=Maxi%20Ruggeri&fontSize=48&" width="100%" alt="Banner Maxi Ruggeri" />
+  <img src="./banner.svg" width="100%" alt="Banner Maxi Ruggeri" />
 
   <!-- Insignias de redes sociales -->
   [![Twitter / X](https://img.shields.io/badge/X-@Maxi__Rugger1-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/Maxi_Rugger1)
   [![Instagram](https://img.shields.io/badge/Instagram-@maxi.ruggeri-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/maxi.ruggeri/)
   [![LinkedIn](https://img.shields.io/badge/LinkedIn-Conectar-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/maxi-ruggeri-47a97b2ab/)
 
-
   > *"Los locos son los que mueven el mundo"*
 
+  <p align="center">
+    <img src="https://readmes.pages.dev/clock/america-buenos_aires/seconds/date" height="50" alt="Fecha y hora de Buenos Aires, Argentina" valign="middle" />
+    <a href="https://open.spotify.com">
+      <img src="https://spotify-github-profile.kittinanx.com/api/view?uid=21rz5zqstvr2bx3plxfrwwyoi&cover_image=true&theme=novatorem&show_offline=false&bar_color=1DB954&bar_color_cover=true" height="100" alt="Escuchando en Spotify" valign="middle" />
+    </a>
+    <a href="https://discord.com/users/661626209142177854">
+      <img src="https://lanyard.cnrad.dev/api/661626209142177854" height="100" alt="Estado en Discord" valign="middle" />
+    </a>
+  </p>
+
 </div>
-<img src="https://readmes.pages.dev/clock/america-buenos_aires/seconds/date" alt="Fecha y hora de Buenos Aires, Argentina" />
 ---
 
 ### Sobre mí
@@ -42,18 +50,6 @@
 ---
 
 ### Mis Estadísticas en GitHub
-
-<div align="center">
-  <img src="https://github-profile-summary-cards.vercel.app/api/cards/stats?username=MaxiRuggeri&theme=tokyonight" alt="Estadísticas de GitHub" />
-</div>
-
-<div align="center">
-  <a href="https://open.spotify.com">
-    <img src="https://spotify-github-profile.kittinanx.com/api/view?uid=21rz5zqstvr2bx3plxfrwwyoi&cover_image=true&theme=novatorem&show_offline=false&bar_color=1DB954&bar_color_cover=true" alt="Escuchando en Spotify" />
-  </a>
-</div>
-
-
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/MaxiRuggeri/MaxiRuggeri/output/github-snake-dark.svg">
@@ -61,4 +57,9 @@
     <img alt="GitHub Snake" src="https://raw.githubusercontent.com/MaxiRuggeri/MaxiRuggeri/output/github-snake.svg" />
   </picture>
 </div>
+
+<div align="center">
+  <img src="https://github-profile-summary-cards.vercel.app/api/cards/stats?username=MaxiRuggeri&theme=tokyonight" alt="Estadísticas de GitHub" />
+</div>
+
 
